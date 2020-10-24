@@ -3,6 +3,8 @@ package webkit
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // Request defines a HTTP request.
@@ -14,6 +16,7 @@ type Request interface {
 type requestImpl struct {
 	httpWriter http.ResponseWriter
 	httpReq    *http.Request
+	params     httprouter.Params
 }
 
 func (r *requestImpl) responseError(err error) {

@@ -10,7 +10,7 @@ import (
 func main() {
 	app := webkit.New()
 	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) error {
-		return nil
+		return req.Response("OK")
 	})
 	log.Println(app.Run())
 }

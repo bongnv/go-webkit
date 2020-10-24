@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 )
 
 // New creates a new application.
 func New() *Application {
 	return &Application{
-		router:     mux.NewRouter(),
+		router:     httprouter.New(),
 		port:       8080,
 		shutdownCh: make(chan struct{}),
 	}
@@ -26,7 +26,7 @@ func New() *Application {
 type Application struct {
 	port int
 
-	router       *mux.Router
+	router       *httprouter.Router
 	shutdownCh   chan struct{}
 	shutdownOnce sync.Once
 	srv          *http.Server
@@ -59,32 +59,28 @@ func (app *Application) Run() error {
 
 // GET registers a new GET route for a path with handler.
 func (app *Application) GET(path string, h Handler) {
-	route := app.router.Path(path).Methods(http.MethodGet)
-	route.HandlerFunc(buildHandlerFunc(h))
+	app.router.GET(path, buildHandlerFunc(h))
 }
 
 // POST registers a new POST route for a path with handler.
 func (app *Application) POST(path string, h Handler) {
-	route := app.router.Path(path).Methods(http.MethodPost)
-	route.HandlerFunc(buildHandlerFunc(h))
+	app.router.POST(path, buildHandlerFunc(h))
 }
 
 // PUT registers a new PUT route for a path with handler.
 func (app *Application) PUT(path string, h Handler) {
-	route := app.router.Path(path).Methods(http.MethodPut)
-	route.HandlerFunc(buildHandlerFunc(h))
+	app.router.PUT(path, buildHandlerFunc(h))
 }
 
 // PATCH registers a new PATCH route for a path with handler.
 func (app *Application) PATCH(path string, h Handler) {
-	route := app.router.Path(path).Methods(http.MethodPatch)
-	route.HandlerFunc(buildHandlerFunc(h))
+	app.router.PATCH(path, buildHandlerFunc(h))
+
 }
 
 // DELETE registers a new DELETE route for a path with handler.
 func (app *Application) DELETE(path string, h Handler) {
-	route := app.router.Path(path).Methods(http.MethodDelete)
-	route.HandlerFunc(buildHandlerFunc(h))
+	app.router.DELETE(path, buildHandlerFunc(h))
 }
 
 // execute starts a function in a goroutine.
