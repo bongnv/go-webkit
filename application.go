@@ -16,19 +16,21 @@ import (
 // New creates a new application.
 func New() *Application {
 	return &Application{
-		router:      mux.NewRouter(),
-		port:        8080,
-		srvShutdown: make(chan struct{}),
+		router:     mux.NewRouter(),
+		port:       8080,
+		shutdownCh: make(chan struct{}),
 	}
 }
 
 // Application is a web application.
 type Application struct {
-	router      *mux.Router
-	port        int
-	wg          sync.WaitGroup
-	srvShutdown chan struct{}
-	srv         *http.Server
+	port int
+
+	router       *mux.Router
+	shutdownCh   chan struct{}
+	shutdownOnce sync.Once
+	srv          *http.Server
+	wg           sync.WaitGroup
 }
 
 // Run starts an HTTP server.
@@ -45,9 +47,11 @@ func (app *Application) Run() error {
 		log.Println("Serving at port", app.port)
 		if err := app.srv.ListenAndServe(); err != nil {
 			log.Println("Error:", err)
-			close(app.srvShutdown)
+			app.shutdown()
 		}
 	})
+
+	app.setupGracefulShutdown()
 
 	app.wg.Wait()
 	return nil
@@ -69,18 +73,26 @@ func (app *Application) execute(fn func()) {
 	}()
 }
 
+// setupGracefulShutdown starts a goroutine for interrupt signal and proceed with graceful shutdown.
 func (app *Application) setupGracefulShutdown() {
 	app.execute(func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		select {
 		case <-sigint:
-			// We received an interrupt signal, shut down.
-			if err := app.srv.Shutdown(context.Background()); err != nil {
-				// Error from closing listeners, or context timeout:
-				log.Printf("HTTP server Shutdown: %v", err)
-			}
-		case <-app.srvShutdown:
+			app.shutdown()
+		case <-app.shutdownCh:
 		}
+	})
+}
+
+func (app *Application) shutdown() {
+	app.shutdownOnce.Do(func() {
+		// We received an interrupt signal, shut down.
+		if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+			// Error from closing listeners, or context timeout:
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		close(app.shutdownCh)
 	})
 }
