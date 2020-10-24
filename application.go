@@ -16,23 +16,24 @@ import (
 // New creates a new application.
 func New() *Application {
 	return &Application{
-		router:     mux.NewRouter(),
-		port:       8080,
-		shutdownCh: make(chan struct{}),
+		router:      mux.NewRouter(),
+		port:        8080,
+		srvShutdown: make(chan struct{}),
 	}
 }
 
 // Application is a web application.
 type Application struct {
-	router     *mux.Router
-	port       int
-	wg         sync.WaitGroup
-	shutdownCh chan struct{}
+	router      *mux.Router
+	port        int
+	wg          sync.WaitGroup
+	srvShutdown chan struct{}
+	srv         *http.Server
 }
 
 // Run starts an HTTP server.
 func (app *Application) Run() error {
-	srv := &http.Server{
+	app.srv = &http.Server{
 		Handler: app.router,
 		Addr:    fmt.Sprint(":", app.port),
 		// Good practice: enforce timeouts for servers you create!
@@ -42,24 +43,9 @@ func (app *Application) Run() error {
 
 	app.execute(func() {
 		log.Println("Serving at port", app.port)
-		if err := srv.ListenAndServe(); err != nil {
+		if err := app.srv.ListenAndServe(); err != nil {
 			log.Println("Error:", err)
-			close(app.shutdownCh)
-		}
-	})
-
-	app.execute(func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt)
-		select {
-		case <-sigint:
-		case <-app.shutdownCh:
-		}
-
-		// We received an interrupt signal, shut down.
-		if err := srv.Shutdown(context.Background()); err != nil {
-			// Error from closing listeners, or context timeout:
-			log.Printf("HTTP server Shutdown: %v", err)
+			close(app.srvShutdown)
 		}
 	})
 
@@ -81,4 +67,20 @@ func (app *Application) execute(fn func()) {
 		defer app.wg.Done()
 		fn()
 	}()
+}
+
+func (app *Application) setupGracefulShutdown() {
+	app.execute(func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+		select {
+		case <-sigint:
+			// We received an interrupt signal, shut down.
+			if err := app.srv.Shutdown(context.Background()); err != nil {
+				// Error from closing listeners, or context timeout:
+				log.Printf("HTTP server Shutdown: %v", err)
+			}
+		case <-app.srvShutdown:
+		}
+	})
 }
