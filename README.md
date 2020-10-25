@@ -39,7 +39,7 @@ func main() {
 
 ## Usages
 ### Options
-These are list of available options for configure `Application`.
+These are available `Option` to configure `Application`.
 
 #### WithLogger
 `WithLogger` allows to specify a custom implementation of the logger.
