@@ -36,3 +36,14 @@ func main() {
 	log.Println(app.Run())
 }
 ```
+
+## Usages
+### Options
+These are list of available options for configure `Application`.
+
+#### WithLogger
+`WithLogger` allows to specify a custom implementation of the logger.
+```go
+  logger := log.New(os.Stderr, "", log.LstdFlags)
+  app := webKit.New(WithLogger(logger))
+```
