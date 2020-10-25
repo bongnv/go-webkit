@@ -69,29 +69,35 @@ func Test_PATCH(t *testing.T) {
 }
 
 func Test_graceful_shutdown(t *testing.T) {
-	app := New()
-	done := make(chan struct{})
-	go func() {
-		require.NoError(t, app.Run())
-		close(done)
-	}()
+	testDone := make(chan struct{})
 
-	<-app.readyCh
-	app.shutdown()
+	require.NotPanics(t, func() {
+		defer close(testDone)
+		app := New()
+		runFinished := make(chan struct{})
+
+		go func() {
+			require.NoError(t, app.Run())
+			close(runFinished)
+		}()
+
+		<-app.readyCh
+		app.shutdown()
+		<-runFinished
+
+		select {
+		case _, ok := <-app.srvShutdownCh:
+			require.False(t, ok, "srvShutdownCh should be closed")
+		default:
+			require.Fail(t, "srvShutdownCh should be closed")
+		}
+
+		require.EqualError(t, app.Run(), http.ErrServerClosed.Error())
+	})
+
 	select {
 	case <-time.After(100 * time.Millisecond):
 		require.Fail(t, "Test times out")
-	case <-done:
+	case <-testDone:
 	}
-
-	select {
-	case _, ok := <-app.srvShutdownCh:
-		require.False(t, ok, "srvShutdownCh should be closed")
-	default:
-		require.Fail(t, "srvShutdownCh should be closed")
-	}
-
-	require.NotPanics(t, func() {
-		require.EqualError(t, app.Run(), http.ErrServerClosed.Error())
-	})
 }
