@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,9 +18,10 @@ import (
 // New creates a new application.
 func New() *Application {
 	return &Application{
-		router:     httprouter.New(),
-		port:       8080,
-		shutdownCh: make(chan struct{}),
+		router:        httprouter.New(),
+		port:          8080,
+		readyCh:       make(chan struct{}),
+		srvShutdownCh: make(chan struct{}),
 	}
 }
 
@@ -26,34 +29,31 @@ func New() *Application {
 type Application struct {
 	port int
 
-	router       *httprouter.Router
-	shutdownCh   chan struct{}
-	shutdownOnce sync.Once
-	srv          *http.Server
-	wg           sync.WaitGroup
+	inShutdown    int32
+	readyCh       chan struct{}
+	router        *httprouter.Router
+	srvShutdownCh chan struct{}
+	srv           *http.Server
+	wg            sync.WaitGroup
 }
 
 // Run starts an HTTP server.
 func (app *Application) Run() error {
-	app.srv = &http.Server{
-		Handler: app.router,
-		Addr:    fmt.Sprint(":", app.port),
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+	if app.shuttingDown() {
+		return http.ErrServerClosed
 	}
 
-	app.execute(func() {
-		log.Println("Serving at port", app.port)
-		if err := app.srv.ListenAndServe(); err != nil {
-			log.Println("Error:", err)
-			app.shutdown()
-		}
-	})
+	defer app.wg.Wait()
 
 	app.setupGracefulShutdown()
 
-	app.wg.Wait()
+	err := app.listenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		log.Println("Error:", err)
+		app.shutdown()
+		return err
+	}
+
 	return nil
 }
 
@@ -93,6 +93,35 @@ func (app *Application) execute(fn func()) {
 	}()
 }
 
+// ListenAndServe listens on the TCP network address addr and then calls
+// Serve with handler to handle requests on incoming connections.
+// Accepted connections are configured to enable TCP keep-alives.
+func (app *Application) listenAndServe() error {
+	defer close(app.srvShutdownCh)
+
+	app.srv = &http.Server{
+		Handler: app.router,
+		Addr:    fmt.Sprint(":", app.port),
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	addr := fmt.Sprint(":", app.port)
+	if addr == "" {
+		addr = ":http"
+	}
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	close(app.readyCh)
+	log.Println("Serving at port", app.port)
+	return app.srv.Serve(ln)
+}
+
 // setupGracefulShutdown starts a goroutine for interrupt signal and proceed with graceful shutdown.
 func (app *Application) setupGracefulShutdown() {
 	app.execute(func() {
@@ -101,18 +130,22 @@ func (app *Application) setupGracefulShutdown() {
 		select {
 		case <-sigint:
 			app.shutdown()
-		case <-app.shutdownCh:
+		case <-app.srvShutdownCh:
 		}
 	})
 }
 
+func (app *Application) shuttingDown() bool {
+	return atomic.LoadInt32(&app.inShutdown) != 0
+}
+
 func (app *Application) shutdown() {
-	app.shutdownOnce.Do(func() {
+	atomic.StoreInt32(&app.inShutdown, 1)
+	app.execute(func() {
 		// We received an interrupt signal, shut down.
 		if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
-		close(app.shutdownCh)
 	})
 }
