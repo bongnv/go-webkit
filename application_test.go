@@ -105,7 +105,7 @@ func Test_graceful_shutdown(t *testing.T) {
 }
 
 func Test_applyOpts(t *testing.T) {
-	logger := log.New(os.Stdout, "", log.Lmsgprefix)
+	logger := log.New(os.Stdout, "", log.LstdFlags)
 	opt := WithLogger(logger)
 	app := &Application{}
 	app.applyOpts([]Option{opt})

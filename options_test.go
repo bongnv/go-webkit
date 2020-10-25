@@ -9,7 +9,7 @@ import (
 )
 
 func Test_WithLogger(t *testing.T) {
-	logger := log.New(os.Stdout, "", log.Lmsgprefix)
+	logger := log.New(os.Stdout, "", log.LstdFlags)
 	opt := WithLogger(logger)
 	app := &Application{}
 	opt.Apply(app)
