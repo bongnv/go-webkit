@@ -9,3 +9,30 @@ A webkit for Go with simple APIs to use. It solves common problems of a web serv
 ## Features
 
 - Graceful shutdown
+
+## Quick Start
+### Installation
+```sh
+go get github.com/bongnv/go-webkit
+```
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/bongnv/go-webkit"
+)
+
+func main() {
+	app := webkit.New()
+	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) error {
+		return req.Response("OK")
+	})
+	log.Println(app.Run())
+}
+```
