@@ -2,7 +2,6 @@ package webkit
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -69,29 +68,30 @@ func Test_PATCH(t *testing.T) {
 	require.Equal(t, http.StatusOK, resp.Code)
 }
 
-func Test_shutdown(t *testing.T) {
+func Test_graceful_shutdown(t *testing.T) {
 	app := New()
-	app.srv = &http.Server{
-		Handler: app.router,
-		Addr:    fmt.Sprint(":", app.port),
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
+	done := make(chan struct{})
+	go func() {
+		require.NoError(t, app.Run())
+		close(done)
+	}()
 
-	require.NotPanics(t, func() {
-		app.shutdown()
-	})
+	<-app.readyCh
+	app.shutdown()
+	select {
+	case <-time.After(100 * time.Millisecond):
+		require.Fail(t, "Test times out")
+	case <-done:
+	}
 
 	select {
-	case _, ok := <-app.shutdownCh:
-		require.False(t, ok, "shutdownCh should be closed")
+	case _, ok := <-app.srvShutdownCh:
+		require.False(t, ok, "srvShutdownCh should be closed")
 	default:
-		require.Fail(t, "shutdownCh should be closed")
+		require.Fail(t, "srvShutdownCh should be closed")
 	}
 
 	require.NotPanics(t, func() {
-		app.shutdown()
+		require.EqualError(t, app.Run(), http.ErrServerClosed.Error())
 	})
-
 }
