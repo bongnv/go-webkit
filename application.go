@@ -16,18 +16,23 @@ import (
 )
 
 // New creates a new application.
-func New() *Application {
-	return &Application{
+func New(opts ...Option) *Application {
+	app := &Application{
 		router:        httprouter.New(),
 		port:          8080,
 		readyCh:       make(chan struct{}),
 		srvShutdownCh: make(chan struct{}),
+		logger:        log.New(os.Stderr, "", log.LstdFlags),
 	}
+
+	app.applyOpts(opts)
+	return app
 }
 
 // Application is a web application.
 type Application struct {
-	port int
+	port   int
+	logger Logger
 
 	inShutdown    int32
 	readyCh       chan struct{}
@@ -49,7 +54,7 @@ func (app *Application) Run() error {
 
 	err := app.listenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		log.Println("Error:", err)
+		app.logger.Println("Error:", err)
 		app.shutdown()
 		return err
 	}
@@ -118,7 +123,7 @@ func (app *Application) listenAndServe() error {
 	}
 
 	close(app.readyCh)
-	log.Println("Serving at port", app.port)
+	app.logger.Println("Serving at port", app.port)
 	return app.srv.Serve(ln)
 }
 
@@ -145,7 +150,15 @@ func (app *Application) shutdown() {
 		// We received an interrupt signal, shut down.
 		if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
 			// Error from closing listeners, or context timeout:
-			log.Printf("HTTP server Shutdown: %v", err)
+			app.logger.Println("HTTP server Shutdown: %v", err)
 		}
 	})
+}
+
+func (app *Application) applyOpts(opts []Option) {
+	for _, o := range opts {
+		if o != nil {
+			o.Apply(app)
+		}
+	}
 }

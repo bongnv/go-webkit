@@ -2,8 +2,10 @@ package webkit
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -100,4 +102,12 @@ func Test_graceful_shutdown(t *testing.T) {
 		require.Fail(t, "Test times out")
 	case <-testDone:
 	}
+}
+
+func Test_applyOpts(t *testing.T) {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	opt := WithLogger(logger)
+	app := &Application{}
+	app.applyOpts([]Option{opt})
+	require.Equal(t, logger, app.logger)
 }
