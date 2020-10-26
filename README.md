@@ -39,11 +39,20 @@ func main() {
 
 ## Usages
 ### Options
-These are available `Option` to configure `Application`.
+An `Option` customizes an `Application` and these are available `Option`:
 
 #### WithLogger
 `WithLogger` allows to specify a custom implementation of the logger.
 ```go
   logger := log.New(os.Stderr, "", log.LstdFlags)
   app := webKit.New(WithLogger(logger))
+```
+
+### Route Options
+A `RouteOption` customizes a route. It could add middlewares like `Recovery`. A `RouteOption` can be a `Option` for the `Application`. In this case, the `RouteOption` will be applied to all ruotes.
+
+#### Recover
+`Recover` recovers from panics and returns error with 500 status code to clients.
+```go
+    app.GET("/hello-world", helloWorld, Recovery())
 ```

@@ -15,6 +15,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Handler defines a function to serve HTTP requests.
+type Handler func(ctx context.Context, req Request) error
+
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
@@ -31,8 +34,9 @@ func New(opts ...Option) *Application {
 
 // Application is a web application.
 type Application struct {
-	port   int
-	logger Logger
+	port         int
+	logger       Logger
+	routeOptions []RouteOption
 
 	inShutdown    int32
 	readyCh       chan struct{}
@@ -63,29 +67,34 @@ func (app *Application) Run() error {
 }
 
 // GET registers a new GET route for a path with handler.
-func (app *Application) GET(path string, h Handler) {
-	app.router.GET(path, buildHandlerFunc(h))
+func (app *Application) GET(path string, h Handler, opts ...RouteOption) {
+	r := app.newRoute(h, opts)
+	app.router.GET(path, r.buildHandle())
 }
 
 // POST registers a new POST route for a path with handler.
-func (app *Application) POST(path string, h Handler) {
-	app.router.POST(path, buildHandlerFunc(h))
+func (app *Application) POST(path string, h Handler, opts ...RouteOption) {
+	r := app.newRoute(h, opts)
+	app.router.POST(path, r.buildHandle())
 }
 
 // PUT registers a new PUT route for a path with handler.
-func (app *Application) PUT(path string, h Handler) {
-	app.router.PUT(path, buildHandlerFunc(h))
+func (app *Application) PUT(path string, h Handler, opts ...RouteOption) {
+	r := app.newRoute(h, opts)
+	app.router.PUT(path, r.buildHandle())
 }
 
 // PATCH registers a new PATCH route for a path with handler.
-func (app *Application) PATCH(path string, h Handler) {
-	app.router.PATCH(path, buildHandlerFunc(h))
+func (app *Application) PATCH(path string, h Handler, opts ...RouteOption) {
+	r := app.newRoute(h, opts)
+	app.router.PATCH(path, r.buildHandle())
 
 }
 
 // DELETE registers a new DELETE route for a path with handler.
-func (app *Application) DELETE(path string, h Handler) {
-	app.router.DELETE(path, buildHandlerFunc(h))
+func (app *Application) DELETE(path string, h Handler, opts ...RouteOption) {
+	r := app.newRoute(h, opts)
+	app.router.DELETE(path, r.buildHandle())
 }
 
 // execute starts a function in a goroutine.
@@ -161,4 +170,17 @@ func (app *Application) applyOpts(opts []Option) {
 			o.Apply(app)
 		}
 	}
+}
+
+// newRoute creates a new route give Handler and a list of RouteOption.
+func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
+	r := &route{
+		handler: h,
+		logger:  app.logger,
+	}
+
+	r.applyOpts(app.routeOptions)
+	r.applyOpts(opts)
+
+	return r
 }
