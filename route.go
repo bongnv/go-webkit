@@ -20,7 +20,7 @@ func (fn RouteOptionFn) ApplyRoute(r *route) {
 }
 
 // Apply implements Option.
-func (fn *RouteOptionFn) Apply(app *Application) {
+func (fn RouteOptionFn) Apply(app *Application) {
 	app.routeOptions = append(app.routeOptions, fn)
 }
 

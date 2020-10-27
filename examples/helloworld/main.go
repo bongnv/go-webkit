@@ -20,7 +20,7 @@ func main() {
 			return err
 		}
 
-		return req.Response("Hello " + reqDto.Name)
+		return req.Respond("Hello " + reqDto.Name)
 	})
 
 	log.Println(app.Run())

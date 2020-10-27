@@ -45,7 +45,7 @@ An `Option` customizes an `Application` and these are available `Option`:
 `WithLogger` allows to specify a custom implementation of the logger.
 ```go
   logger := log.New(os.Stderr, "", log.LstdFlags)
-  app := webKit.New(WithLogger(logger))
+  app := webkit.New(WithLogger(logger))
 ```
 
 ### Route Options
@@ -64,3 +64,11 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
 ```go
    app.GET("/hello-world", helloWorld, WithDecoder(customDecoder))
 ```
+
+#### WithCORS
+`WithCORS` enables the support for Cross-Origin Resource Sharing. Ref: https://developer.mozilla.org/en/docs/Web/HTTP/Access_control_CORS.
+```go
+  app := webkit.New(WithCORS(webkit.DefaultCORSConfig))
+  // or
+  app.GET("/hello-world", helloWorld, WithCORS(webkit.DefaultCORSConfig))
+``` 
