@@ -114,7 +114,7 @@ func Test_applyOpts(t *testing.T) {
 
 func Test_Default(t *testing.T) {
 	app := Default()
-	require.Len(t, app.routeOptions, 1)
+	require.Len(t, app.routeOptions, 2)
 	require.NotNil(t, app.decoder)
 	require.NotNil(t, app.router)
 	require.NotNil(t, app.logger)
