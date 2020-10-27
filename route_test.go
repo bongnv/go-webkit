@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +26,25 @@ func Test_RouteOptionFn_Apply(t *testing.T) {
 	app := &Application{}
 	mockRouteOptionFn.Apply(app)
 	require.Len(t, app.routeOptions, 1)
+}
+
+func Test_buildHandle(t *testing.T) {
+	r := &route{
+		handler: func(_ context.Context, req Request) error {
+			require.IsType(t, &requestImpl{}, req)
+			require.Len(t, req.(*requestImpl).params, 1)
+			require.Equal(t, "key", req.(*requestImpl).params[0].Key)
+			return nil
+		},
+	}
+	rr := httptest.NewRecorder()
+	handle := r.buildHandle()
+	handle(rr, &http.Request{}, []httprouter.Param{{
+		Key:   "key",
+		Value: "value",
+	}})
+
+	require.Equal(t, http.StatusOK, rr.Code)
 }
 
 func Test_buildHandle_responseError(t *testing.T) {

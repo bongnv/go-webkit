@@ -49,10 +49,18 @@ An `Option` customizes an `Application` and these are available `Option`:
 ```
 
 ### Route Options
-A `RouteOption` customizes a route. It could add middlewares like `Recovery`. A `RouteOption` can be a `Option` for the `Application`. In this case, the `RouteOption` will be applied to all ruotes.
+A `RouteOption` customizes a route. It can be used to add middlewares like `Recovery()`.
 
-#### Recover
-`Recover` recovers from panics and returns error with 500 status code to clients.
+For convenience, a `RouteOption` can be a `Option` for the `Application`. In this case, the `RouteOption` will be applied to all routes.
+
+#### WithRecovery
+`WithRecovery` recovers from panics and returns error with 500 status code to clients.
 ```go
-    app.GET("/hello-world", helloWorld, Recovery())
+    app.GET("/hello-world", helloWorld, WithRecovery())
+```
+
+#### WithDecoder
+`WithDecoder` specifies a custom logic for decoding the request to a request DTO.
+```go
+   app.GET("/hello-world", helloWorld, WithDecoder(customDecoder))
 ```
