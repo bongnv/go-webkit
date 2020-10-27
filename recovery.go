@@ -10,8 +10,8 @@ const (
 	defaultStackSize = 4 << 10
 )
 
-// Recovery returns a middleware which recovers from panics.
-func Recovery() RouteOptionFn {
+// WithRecovery returns a middleware which recovers from panics.
+func WithRecovery() RouteOptionFn {
 	return func(r *route) {
 		m := func(next Handler) Handler {
 			return func(ctx context.Context, req Request) (err error) {

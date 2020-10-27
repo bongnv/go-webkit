@@ -7,10 +7,21 @@ import (
 	"github.com/bongnv/go-webkit"
 )
 
+// Request is an example of Request DTO.
+type Request struct {
+	Name string
+}
+
 func main() {
 	app := webkit.New()
-	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) error {
-		return req.Response("OK")
+	app.GET("/hello-world/:name", func(ctx context.Context, req webkit.Request) error {
+		reqDto := &Request{}
+		if err := req.Decode(reqDto); err != nil {
+			return err
+		}
+
+		return req.Response("Hello " + reqDto.Name)
 	})
+
 	log.Println(app.Run())
 }

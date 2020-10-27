@@ -22,7 +22,7 @@ func Test_Recovery(t *testing.T) {
 		middlewares: nil,
 	}
 
-	Recovery().ApplyRoute(r)
+	WithRecovery().ApplyRoute(r)
 	handle := r.buildHandle()
 	rr := httptest.NewRecorder()
 	require.NotPanics(t, func() {

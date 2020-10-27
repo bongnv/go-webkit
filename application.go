@@ -21,6 +21,7 @@ type Handler func(ctx context.Context, req Request) error
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
+		decoder:       newDecoder(),
 		router:        httprouter.New(),
 		port:          8080,
 		readyCh:       make(chan struct{}),
@@ -34,6 +35,7 @@ func New(opts ...Option) *Application {
 
 // Application is a web application.
 type Application struct {
+	decoder      Decoder
 	port         int
 	logger       Logger
 	routeOptions []RouteOption
@@ -175,6 +177,7 @@ func (app *Application) applyOpts(opts []Option) {
 // newRoute creates a new route give Handler and a list of RouteOption.
 func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
 	r := &route{
+		decoder: app.decoder,
 		handler: h,
 		logger:  app.logger,
 	}

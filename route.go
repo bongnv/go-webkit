@@ -25,6 +25,7 @@ func (fn *RouteOptionFn) Apply(app *Application) {
 }
 
 type route struct {
+	decoder     Decoder
 	handler     Handler
 	logger      Logger
 	middlewares []Middleware
@@ -45,8 +46,10 @@ func (r *route) buildHandle() httprouter.Handle {
 	return func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
 		ctx := httpReq.Context()
 		req := &requestImpl{
+			decoder:    r.decoder,
 			httpWriter: w,
 			httpReq:    httpReq,
+			params:     params,
 		}
 
 		err := h(ctx, req)
