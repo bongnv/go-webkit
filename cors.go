@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// CORSConfig defines the config for WithCORS middleware.
 type CORSConfig struct {
 	AllowOrigins     []string
 	AllowMethods     []string
@@ -16,7 +17,7 @@ type CORSConfig struct {
 	MaxAge           int
 }
 
-// DefaultCORSConfig is the default configuration for the CORS middleware.
+// DefaultCORSConfig is the default configuration for the WithCORS middleware.
 var DefaultCORSConfig = CORSConfig{
 	AllowOrigins: []string{"*"},
 	AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
