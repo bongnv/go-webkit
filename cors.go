@@ -56,7 +56,7 @@ func WithCORS(cfg CORSConfig) Middleware {
 			if allowHeaders != "" {
 				req.ResponseHeader().Set(HeaderAccessControlAllowHeaders, allowHeaders)
 			} else {
-				h := req.ResponseHeader().Get(HeaderAccessControlRequestHeaders)
+				h := httpReq.Header.Get(HeaderAccessControlRequestHeaders)
 				if h != "" {
 					req.ResponseHeader().Set(HeaderAccessControlAllowHeaders, h)
 				}
@@ -70,6 +70,7 @@ func WithCORS(cfg CORSConfig) Middleware {
 	}
 }
 
+// copied from https://github.com/labstack/echo/blob/master/middleware/cors.go
 func matchScheme(domain, pattern string) bool {
 	didx := strings.Index(domain, ":")
 	pidx := strings.Index(pattern, ":")
@@ -77,6 +78,7 @@ func matchScheme(domain, pattern string) bool {
 }
 
 // matchSubdomain compares authority with wildcard
+// copied from https://github.com/labstack/echo/blob/master/middleware/cors.go
 func matchSubdomain(domain, pattern string) bool {
 	if !matchScheme(domain, pattern) {
 		return false

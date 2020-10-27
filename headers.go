@@ -9,6 +9,7 @@ const (
 	HeaderAccessControlMaxAge           = "Access-Control-Max-Age"
 	HeaderAccessControlRequestHeaders   = "Access-Control-Request-Headers"
 	HeaderAccessControlRequestMethod    = "Access-Control-Request-Method"
+	HeaderContentType                   = "Content-Type"
 	HeaderOrigin                        = "Origin"
 	HeaderVary                          = "Vary"
 )

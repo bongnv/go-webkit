@@ -31,11 +31,13 @@ func TestCORS_allow_origin(t *testing.T) {
 		httpWriter: rr,
 	}
 	h := WithCORS(CORSConfig{
-		AllowOrigins: []string{"localhost"},
+		AllowOrigins:     []string{"localhost"},
+		AllowCredentials: true,
 	})(mockHandler)
 	req.httpReq.Header.Set(HeaderOrigin, "localhost")
 	require.NoError(t, h(context.Background(), req))
 	require.Equal(t, "localhost", rr.Header().Get(HeaderAccessControlAllowOrigin))
+	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
 }
 
 func TestCORS_preflight_request(t *testing.T) {
@@ -46,6 +48,7 @@ func TestCORS_preflight_request(t *testing.T) {
 	}
 
 	req.httpReq.Header.Set(HeaderOrigin, "localhost")
+	req.httpReq.Header.Set(HeaderAccessControlRequestHeaders, "Content-Type")
 	cors := WithCORS(CORSConfig{
 		AllowOrigins:     []string{"localhost"},
 		AllowCredentials: true,
@@ -58,6 +61,7 @@ func TestCORS_preflight_request(t *testing.T) {
 	require.NotEmpty(t, rr.Header().Get(HeaderAccessControlAllowMethods))
 	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
 	require.Equal(t, "3600", rr.Header().Get(HeaderAccessControlMaxAge))
+	require.Equal(t, "Content-Type", rr.Header().Get(HeaderAccessControlAllowHeaders))
 }
 
 func TestCORS_preflight_with_wildcard(t *testing.T) {
@@ -73,6 +77,7 @@ func TestCORS_preflight_with_wildcard(t *testing.T) {
 		AllowOrigins:     []string{"*"},
 		AllowCredentials: true,
 		AllowMethods:     []string{http.MethodGet},
+		AllowHeaders:     []string{HeaderContentType},
 		MaxAge:           3600,
 	})
 	h := cors(mockHandler)
@@ -81,6 +86,7 @@ func TestCORS_preflight_with_wildcard(t *testing.T) {
 	require.NotEmpty(t, rr.Header().Get(HeaderAccessControlAllowMethods))
 	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
 	require.Equal(t, "3600", rr.Header().Get(HeaderAccessControlMaxAge))
+	require.Equal(t, "Content-Type", rr.Header().Get(HeaderAccessControlAllowHeaders))
 }
 
 func TestCORS_preflight_with_subdomain(t *testing.T) {
