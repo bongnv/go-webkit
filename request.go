@@ -9,10 +9,14 @@ import (
 
 // Request defines a HTTP request.
 type Request interface {
+	// HTTPRequest returns the http.Request.
+	HTTPRequest() *http.Request
 	// Decode decodes the request to an object.
 	Decode(obj interface{}) error
-	// Response sends take resp and render it to clients.
-	Response(resp interface{}) error
+	// ResponseHeader returns the header map that will be sent.
+	ResponseHeader() http.Header
+	// Respond sends take resp and render it to clients.
+	Respond(resp interface{}) error
 }
 
 type requestImpl struct {
@@ -20,6 +24,10 @@ type requestImpl struct {
 	httpWriter http.ResponseWriter
 	httpReq    *http.Request
 	params     httprouter.Params
+}
+
+func (r *requestImpl) HTTPRequest() *http.Request {
+	return r.httpReq
 }
 
 func (r *requestImpl) Decode(obj interface{}) error {
@@ -34,7 +42,16 @@ func (r *requestImpl) Decode(obj interface{}) error {
 	return r.decoder.Decode(obj, r.httpReq)
 }
 
-func (r *requestImpl) Response(resp interface{}) error {
+func (r *requestImpl) ResponseHeader() http.Header {
+	return r.httpWriter.Header()
+}
+
+func (r *requestImpl) Respond(resp interface{}) error {
+	if resp == nil {
+		r.httpWriter.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
 	enc := json.NewEncoder(r.httpWriter)
 	return enc.Encode(resp)
 }

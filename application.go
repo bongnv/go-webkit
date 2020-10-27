@@ -33,6 +33,11 @@ func New(opts ...Option) *Application {
 	return app
 }
 
+// Default returns an Application with a default set of configurations.
+func Default() *Application {
+	return New(WithCORS(DefaultCORSConfig))
+}
+
 // Application is a web application.
 type Application struct {
 	decoder      Decoder

@@ -22,7 +22,7 @@ func executeRequest(app *Application, req *http.Request) *httptest.ResponseRecor
 func Test_GET(t *testing.T) {
 	app := New()
 	app.GET("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return req.Response("OK")
+		return req.Respond("OK")
 	})
 	req, _ := http.NewRequest("GET", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)
@@ -110,4 +110,12 @@ func Test_applyOpts(t *testing.T) {
 	app := &Application{}
 	app.applyOpts([]Option{opt})
 	require.Equal(t, logger, app.logger)
+}
+
+func Test_Default(t *testing.T) {
+	app := Default()
+	require.Len(t, app.routeOptions, 1)
+	require.NotNil(t, app.decoder)
+	require.NotNil(t, app.router)
+	require.NotNil(t, app.logger)
 }
