@@ -33,36 +33,37 @@ func WithCORS(cfg CORSConfig) Middleware {
 			httpReq := req.HTTPRequest()
 			origin := httpReq.Header.Get(HeaderOrigin)
 			allowOrigin := getAllowOrigin(origin, cfg)
+			header := ResponseHeaderFromCtx(ctx)
 
 			// non-OPTIONS requests
 			if httpReq.Method != http.MethodOptions {
-				req.ResponseHeader().Add(HeaderVary, HeaderOrigin)
-				req.ResponseHeader().Set(HeaderAccessControlAllowOrigin, allowOrigin)
+				header.Add(HeaderVary, HeaderOrigin)
+				header.Set(HeaderAccessControlAllowOrigin, allowOrigin)
 				if cfg.AllowCredentials {
-					req.ResponseHeader().Set(HeaderAccessControlAllowCredentials, "true")
+					header.Set(HeaderAccessControlAllowCredentials, "true")
 				}
 				return next(ctx, req)
 			}
 
 			// Preflight requests
-			req.ResponseHeader().Add(HeaderVary, HeaderOrigin)
-			req.ResponseHeader().Add(HeaderVary, HeaderAccessControlRequestMethod)
-			req.ResponseHeader().Add(HeaderVary, HeaderAccessControlRequestHeaders)
-			req.ResponseHeader().Set(HeaderAccessControlAllowOrigin, allowOrigin)
-			req.ResponseHeader().Set(HeaderAccessControlAllowMethods, allowMethods)
+			header.Add(HeaderVary, HeaderOrigin)
+			header.Add(HeaderVary, HeaderAccessControlRequestMethod)
+			header.Add(HeaderVary, HeaderAccessControlRequestHeaders)
+			header.Set(HeaderAccessControlAllowOrigin, allowOrigin)
+			header.Set(HeaderAccessControlAllowMethods, allowMethods)
 			if cfg.AllowCredentials {
-				req.ResponseHeader().Set(HeaderAccessControlAllowCredentials, "true")
+				header.Set(HeaderAccessControlAllowCredentials, "true")
 			}
 			if allowHeaders != "" {
-				req.ResponseHeader().Set(HeaderAccessControlAllowHeaders, allowHeaders)
+				header.Set(HeaderAccessControlAllowHeaders, allowHeaders)
 			} else {
 				h := httpReq.Header.Get(HeaderAccessControlRequestHeaders)
 				if h != "" {
-					req.ResponseHeader().Set(HeaderAccessControlAllowHeaders, h)
+					header.Set(HeaderAccessControlAllowHeaders, h)
 				}
 			}
 			if cfg.MaxAge > 0 {
-				req.ResponseHeader().Set(HeaderAccessControlMaxAge, strconv.Itoa(cfg.MaxAge))
+				header.Set(HeaderAccessControlMaxAge, strconv.Itoa(cfg.MaxAge))
 			}
 
 			return nil, nil

@@ -1,6 +1,7 @@
 package webkit
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -46,21 +47,37 @@ func (r *route) buildHandle() httprouter.Handle {
 
 	return func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
 		ctx := httpReq.Context()
+		ctx = context.WithValue(ctx, ctxKeyHTTPResponseWriter, w)
+
 		req := &requestImpl{
-			decoder:    r.decoder,
-			httpWriter: w,
-			httpReq:    httpReq,
-			params:     params,
+			decoder: r.decoder,
+			httpReq: httpReq,
+			params:  params,
 		}
 
 		resp, err := h(ctx, req)
 		if err == nil {
-			err = r.encoder.Encode(w, resp)
+			err = r.writeToHTTPResponse(w, resp)
 		}
 
 		if err != nil {
 			// TODO: Add error handler
-			req.responseError(err)
+			r.responseError(w, err)
 		}
 	}
+}
+
+func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) error {
+	if resp == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
+	return r.encoder.Encode(w, resp)
+}
+
+func (r *route) responseError(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	// TODO: Add logs here
+	_, _ = w.Write([]byte(err.Error()))
 }
