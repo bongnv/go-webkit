@@ -15,7 +15,7 @@ import (
 func Test_Recovery(t *testing.T) {
 	var b bytes.Buffer
 	r := &route{
-		handler: func(_ context.Context, req Request) error {
+		handler: func(_ context.Context, req Request) (interface{}, error) {
 			panic("random panic")
 		},
 		logger:      log.New(&b, "", log.LstdFlags),

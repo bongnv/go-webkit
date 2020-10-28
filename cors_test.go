@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockHandler(ctx context.Context, req Request) error {
-	return nil
+func mockHandler(ctx context.Context, req Request) (interface{}, error) {
+	return nil, nil
 }
 
 func TestCORS_wildcard_origin(t *testing.T) {
@@ -20,7 +20,8 @@ func TestCORS_wildcard_origin(t *testing.T) {
 		httpWriter: rr,
 	}
 	h := WithCORS(DefaultCORSConfig)(mockHandler)
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "*", rr.Header().Get(HeaderAccessControlAllowOrigin))
 }
 
@@ -35,7 +36,8 @@ func TestCORS_allow_origin(t *testing.T) {
 		AllowCredentials: true,
 	})(mockHandler)
 	req.httpReq.Header.Set(HeaderOrigin, "localhost")
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "localhost", rr.Header().Get(HeaderAccessControlAllowOrigin))
 	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
 }
@@ -56,7 +58,8 @@ func TestCORS_preflight_request(t *testing.T) {
 		MaxAge:           3600,
 	})
 	h := cors(mockHandler)
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "localhost", rr.Header().Get(HeaderAccessControlAllowOrigin))
 	require.NotEmpty(t, rr.Header().Get(HeaderAccessControlAllowMethods))
 	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
@@ -81,7 +84,8 @@ func TestCORS_preflight_with_wildcard(t *testing.T) {
 		MaxAge:           3600,
 	})
 	h := cors(mockHandler)
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "localhost", rr.Header().Get(HeaderAccessControlAllowOrigin))
 	require.NotEmpty(t, rr.Header().Get(HeaderAccessControlAllowMethods))
 	require.Equal(t, "true", rr.Header().Get(HeaderAccessControlAllowCredentials))
@@ -103,11 +107,13 @@ func TestCORS_preflight_with_subdomain(t *testing.T) {
 		MaxAge:           3600,
 	})
 	h := cors(mockHandler)
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "https://a.example.com", rr.Header().Get(HeaderAccessControlAllowOrigin))
 
 	req.httpReq.Header.Set(HeaderOrigin, "https://b.example.com")
-	require.NoError(t, h(context.Background(), req))
+	_, err = h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "https://b.example.com", rr.Header().Get(HeaderAccessControlAllowOrigin))
 }
 
@@ -125,10 +131,12 @@ func Test_CORS_allowOriginScheme(t *testing.T) {
 	h := cors(mockHandler)
 
 	req.httpReq.Header.Set(HeaderOrigin, "https://example.com")
-	require.NoError(t, h(context.Background(), req))
+	_, err := h(context.Background(), req)
+	require.NoError(t, err)
 	require.Equal(t, "https://example.com", rr.Header().Get(HeaderAccessControlAllowOrigin))
 
 	req.httpReq.Header.Set(HeaderOrigin, "http://example.com")
-	require.NoError(t, h(context.Background(), req))
+	_, err = h(context.Background(), req)
+	require.NoError(t, err)
 	require.Empty(t, rr.Header().Get(HeaderAccessControlAllowOrigin))
 }

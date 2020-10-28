@@ -26,7 +26,7 @@ var DefaultCORSConfig = CORSConfig{
 // WithCORS returns a middleware to support Cross-Origin Resource Sharing.
 func WithCORS(cfg CORSConfig) Middleware {
 	return func(next Handler) Handler {
-		return func(ctx context.Context, req Request) error {
+		return func(ctx context.Context, req Request) (interface{}, error) {
 			allowMethods := strings.Join(cfg.AllowMethods, ",")
 			allowHeaders := strings.Join(cfg.AllowHeaders, ",")
 
@@ -65,7 +65,7 @@ func WithCORS(cfg CORSConfig) Middleware {
 				req.ResponseHeader().Set(HeaderAccessControlMaxAge, strconv.Itoa(cfg.MaxAge))
 			}
 
-			return req.Respond(nil)
+			return nil, nil
 		}
 	}
 }

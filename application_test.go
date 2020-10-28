@@ -21,8 +21,8 @@ func executeRequest(app *Application, req *http.Request) *httptest.ResponseRecor
 
 func Test_GET(t *testing.T) {
 	app := New()
-	app.GET("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return req.Respond("OK")
+	app.GET("/mock-endpoint", func(ctx context.Context, req Request) (interface{}, error) {
+		return "OK", nil
 	})
 	req, _ := http.NewRequest("GET", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)
@@ -32,8 +32,8 @@ func Test_GET(t *testing.T) {
 
 func Test_PUT(t *testing.T) {
 	app := New()
-	app.PUT("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return nil
+	app.PUT("/mock-endpoint", func(ctx context.Context, req Request) (interface{}, error) {
+		return "OK", nil
 	})
 	req, _ := http.NewRequest("PUT", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)
@@ -42,8 +42,8 @@ func Test_PUT(t *testing.T) {
 
 func Test_POST(t *testing.T) {
 	app := New()
-	app.POST("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return nil
+	app.POST("/mock-endpoint", func(ctx context.Context, req Request) (interface{}, error) {
+		return "OK", nil
 	})
 	req, _ := http.NewRequest("POST", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)
@@ -52,18 +52,18 @@ func Test_POST(t *testing.T) {
 
 func Test_DELETE(t *testing.T) {
 	app := New()
-	app.DELETE("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return nil
+	app.DELETE("/mock-endpoint", func(ctx context.Context, req Request) (interface{}, error) {
+		return nil, nil
 	})
 	req, _ := http.NewRequest("DELETE", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)
-	require.Equal(t, http.StatusOK, resp.Code)
+	require.Equal(t, http.StatusNoContent, resp.Code)
 }
 
 func Test_PATCH(t *testing.T) {
 	app := New()
-	app.PATCH("/mock-endpoint", func(ctx context.Context, req Request) error {
-		return nil
+	app.PATCH("/mock-endpoint", func(ctx context.Context, req Request) (interface{}, error) {
+		return "OK", nil
 	})
 	req, _ := http.NewRequest("PATCH", "/mock-endpoint", nil)
 	resp := executeRequest(app, req)

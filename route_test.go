@@ -30,11 +30,12 @@ func Test_RouteOptionFn_Apply(t *testing.T) {
 
 func Test_buildHandle(t *testing.T) {
 	r := &route{
-		handler: func(_ context.Context, req Request) error {
+		encoder: newEncoder(),
+		handler: func(_ context.Context, req Request) (interface{}, error) {
 			require.IsType(t, &requestImpl{}, req)
 			require.Len(t, req.(*requestImpl).params, 1)
 			require.Equal(t, "key", req.(*requestImpl).params[0].Key)
-			return nil
+			return "OK", nil
 		},
 	}
 	rr := httptest.NewRecorder()
@@ -49,8 +50,8 @@ func Test_buildHandle(t *testing.T) {
 
 func Test_buildHandle_responseError(t *testing.T) {
 	r := &route{
-		handler: func(_ context.Context, _ Request) error {
-			return errors.New("remote error")
+		handler: func(_ context.Context, _ Request) (interface{}, error) {
+			return nil, errors.New("remote error")
 		},
 	}
 	rr := httptest.NewRecorder()

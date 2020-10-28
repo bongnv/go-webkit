@@ -14,7 +14,7 @@ const (
 func WithRecovery() RouteOptionFn {
 	return func(r *route) {
 		m := func(next Handler) Handler {
-			return func(ctx context.Context, req Request) (err error) {
+			return func(ctx context.Context, req Request) (resp interface{}, err error) {
 				defer func() {
 					if rec := recover(); rec != nil {
 						errFromPanic, ok := rec.(error)
@@ -30,7 +30,7 @@ func WithRecovery() RouteOptionFn {
 					}
 				}()
 
-				err = next(ctx, req)
+				resp, err = next(ctx, req)
 				return
 			}
 		}

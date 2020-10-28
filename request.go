@@ -1,7 +1,6 @@
 package webkit
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,8 +14,6 @@ type Request interface {
 	Decode(obj interface{}) error
 	// ResponseHeader returns the header map that will be sent.
 	ResponseHeader() http.Header
-	// Respond sends take resp and render it to clients.
-	Respond(resp interface{}) error
 }
 
 type requestImpl struct {
@@ -44,16 +41,6 @@ func (r *requestImpl) Decode(obj interface{}) error {
 
 func (r *requestImpl) ResponseHeader() http.Header {
 	return r.httpWriter.Header()
-}
-
-func (r *requestImpl) Respond(resp interface{}) error {
-	if resp == nil {
-		r.httpWriter.WriteHeader(http.StatusNoContent)
-		return nil
-	}
-
-	enc := json.NewEncoder(r.httpWriter)
-	return enc.Encode(resp)
 }
 
 func (r *requestImpl) responseError(err error) {

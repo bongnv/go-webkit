@@ -16,12 +16,13 @@ import (
 )
 
 // Handler defines a function to serve HTTP requests.
-type Handler func(ctx context.Context, req Request) error
+type Handler func(ctx context.Context, req Request) (interface{}, error)
 
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
 		decoder:       newDecoder(),
+		encoder:       newEncoder(),
 		router:        httprouter.New(),
 		port:          8080,
 		readyCh:       make(chan struct{}),
@@ -44,6 +45,7 @@ func Default() *Application {
 // Application is a web application.
 type Application struct {
 	decoder      Decoder
+	encoder      Encoder
 	port         int
 	logger       Logger
 	routeOptions []RouteOption
@@ -186,6 +188,7 @@ func (app *Application) applyOpts(opts []Option) {
 func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
 	r := &route{
 		decoder: app.decoder,
+		encoder: app.encoder,
 		handler: h,
 		logger:  app.logger,
 	}
