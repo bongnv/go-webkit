@@ -30,8 +30,8 @@ import (
 
 func main() {
 	app := webkit.New()
-	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) error {
-		return req.Response("OK")
+	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) (interface{}, error) {
+		return "OK", nil
 	})
 	log.Println(app.Run())
 }

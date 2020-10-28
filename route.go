@@ -26,6 +26,7 @@ func (fn RouteOptionFn) Apply(app *Application) {
 
 type route struct {
 	decoder     Decoder
+	encoder     Encoder
 	handler     Handler
 	logger      Logger
 	middlewares []Middleware
@@ -52,8 +53,13 @@ func (r *route) buildHandle() httprouter.Handle {
 			params:     params,
 		}
 
-		err := h(ctx, req)
+		resp, err := h(ctx, req)
+		if err == nil {
+			err = r.encoder.Encode(w, resp)
+		}
+
 		if err != nil {
+			// TODO: Add error handler
 			req.responseError(err)
 		}
 	}
