@@ -12,15 +12,12 @@ type Request interface {
 	HTTPRequest() *http.Request
 	// Decode decodes the request to an object.
 	Decode(obj interface{}) error
-	// ResponseHeader returns the header map that will be sent.
-	ResponseHeader() http.Header
 }
 
 type requestImpl struct {
-	decoder    Decoder
-	httpWriter http.ResponseWriter
-	httpReq    *http.Request
-	params     httprouter.Params
+	decoder Decoder
+	httpReq *http.Request
+	params  httprouter.Params
 }
 
 func (r *requestImpl) HTTPRequest() *http.Request {
@@ -37,14 +34,4 @@ func (r *requestImpl) Decode(obj interface{}) error {
 	}
 
 	return r.decoder.Decode(obj, r.httpReq)
-}
-
-func (r *requestImpl) ResponseHeader() http.Header {
-	return r.httpWriter.Header()
-}
-
-func (r *requestImpl) responseError(err error) {
-	r.httpWriter.WriteHeader(http.StatusInternalServerError)
-	// TODO: Add logs here
-	_, _ = r.httpWriter.Write([]byte(err.Error()))
 }
