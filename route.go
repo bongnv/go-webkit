@@ -26,11 +26,12 @@ func (fn RouteOptionFn) Apply(app *Application) {
 }
 
 type route struct {
-	decoder     Decoder
-	encoder     Encoder
-	handler     Handler
-	logger      Logger
-	middlewares []Middleware
+	decoder      Decoder
+	encoder      Encoder
+	errorHandler ErrorHandler
+	handler      Handler
+	logger       Logger
+	middlewares  []Middleware
 }
 
 func (r *route) applyOpts(opts []RouteOption) {
@@ -62,7 +63,7 @@ func (r *route) buildHandle() httprouter.Handle {
 
 		if err != nil {
 			// TODO: Add error handler
-			r.responseError(w, err)
+			r.errorHandler(w, err)
 		}
 	}
 }
@@ -74,10 +75,4 @@ func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) err
 	}
 
 	return r.encoder.Encode(w, resp)
-}
-
-func (r *route) responseError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	// TODO: Add logs here
-	_, _ = w.Write([]byte(err.Error()))
 }

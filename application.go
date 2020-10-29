@@ -187,10 +187,11 @@ func (app *Application) applyOpts(opts []Option) {
 // newRoute creates a new route give Handler and a list of RouteOption.
 func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
 	r := &route{
-		decoder: app.decoder,
-		encoder: app.encoder,
-		handler: h,
-		logger:  app.logger,
+		decoder:      app.decoder,
+		encoder:      app.encoder,
+		errorHandler: defaultErrorHandler(app.logger),
+		handler:      h,
+		logger:       app.logger,
 	}
 
 	r.applyOpts(app.routeOptions)
