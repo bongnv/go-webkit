@@ -18,8 +18,9 @@ func Test_Recovery(t *testing.T) {
 		handler: func(_ context.Context, req Request) (interface{}, error) {
 			panic("random panic")
 		},
-		logger:      log.New(&b, "", log.LstdFlags),
-		middlewares: nil,
+		logger:       log.New(&b, "", log.LstdFlags),
+		errorHandler: defaultErrorHandler(log.New(&b, "", log.LstdFlags)),
+		middlewares:  nil,
 	}
 
 	WithRecovery().ApplyRoute(r)

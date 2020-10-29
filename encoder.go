@@ -11,9 +11,6 @@ type Encoder interface {
 	Encode(w http.ResponseWriter, obj interface{}) error
 }
 
-// Header is an alias of http.Header for convenient uses.
-type Header = http.Header
-
 type defaultEncoder struct{}
 
 func (d *defaultEncoder) Encode(w http.ResponseWriter, obj interface{}) error {

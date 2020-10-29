@@ -72,3 +72,18 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
   // or
   app.GET("/hello-world", helloWorld, WithCORS(webkit.DefaultCORSConfig))
 ``` 
+
+#### WithErrorHandler
+`WithErrorHandler` allows to specify a custom `ErrorHandler` which converts an error into HTTP response.
+```go
+func yourCustomErrHandler(w http.ResponseWriter, errResp error) {
+    w.WriteHeader(http.StatusInternalServerError)
+    if err := encoder.Encode(w, errResp); err != nil {
+        logger.Println("Error", err, "while encoding", errResp)
+    }
+}
+
+func yourInitFunc(app *Application) {
+    app.GET("/helle-world", helleWorld, WithErrorHandler(yourCustomErrHandler))
+}
+```

@@ -3,8 +3,10 @@ package webkit
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -53,6 +55,7 @@ func Test_buildHandle_responseError(t *testing.T) {
 		handler: func(_ context.Context, _ Request) (interface{}, error) {
 			return nil, errors.New("remote error")
 		},
+		errorHandler: defaultErrorHandler(log.New(os.Stderr, "", log.LstdFlags)),
 	}
 	rr := httptest.NewRecorder()
 	handle := r.buildHandle()
