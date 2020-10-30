@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/bongnv/gwf/branch/main/graph/badge.svg?token=0SSLExlCNY)](https://codecov.io/gh/bongnv/gwf)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/gwf)](https://goreportcard.com/report/github.com/bongnv/gwf)
 
-A webkit for Go with simple APIs to use. It solves common problems of a web server so engineers can focus on business logic.
+A web framework for Go with simple APIs to use. It solves common problems of a web server so engineers can focus on business logic.
 
 ## Features
 
