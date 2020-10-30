@@ -19,17 +19,21 @@ type Handler func(ctx context.Context, req Request) (interface{}, error)
 
 // New creates a new application.
 func New(opts ...Option) *Application {
+	logger := defaultLogger()
 	app := &Application{
-		decoder:       newDecoder(),
-		encoder:       newEncoder(),
-		router:        httprouter.New(),
-		port:          8080,
+		router: httprouter.New(),
+		port:   8080,
+		routeOptions: []RouteOption{
+			WithDecoder(newDecoder()),
+			WithEncoder(newEncoder()),
+		},
 		readyCh:       make(chan struct{}),
 		srvShutdownCh: make(chan struct{}),
-		logger:        defaultLogger(),
+		logger:        logger,
 	}
 
 	app.applyOpts(opts)
+	app.root = app.Group("/")
 	return app
 }
 
@@ -44,14 +48,13 @@ func Default() *Application {
 
 // Application is a web application.
 type Application struct {
-	decoder      Decoder
-	encoder      Encoder
 	port         int
 	logger       Logger
 	routeOptions []RouteOption
 
 	inShutdown    int32
 	readyCh       chan struct{}
+	root          *Group
 	router        *httprouter.Router
 	srvShutdownCh chan struct{}
 	srv           *http.Server
@@ -80,33 +83,47 @@ func (app *Application) Run() error {
 
 // GET registers a new GET route for a path with handler.
 func (app *Application) GET(path string, h Handler, opts ...RouteOption) {
-	r := app.newRoute(h, opts)
-	app.router.GET(path, r.buildHandle())
+	app.root.GET(path, h, opts...)
 }
 
 // POST registers a new POST route for a path with handler.
 func (app *Application) POST(path string, h Handler, opts ...RouteOption) {
-	r := app.newRoute(h, opts)
-	app.router.POST(path, r.buildHandle())
+	app.root.POST(path, h, opts...)
 }
 
 // PUT registers a new PUT route for a path with handler.
 func (app *Application) PUT(path string, h Handler, opts ...RouteOption) {
-	r := app.newRoute(h, opts)
-	app.router.PUT(path, r.buildHandle())
+	app.root.PUT(path, h, opts...)
 }
 
 // PATCH registers a new PATCH route for a path with handler.
 func (app *Application) PATCH(path string, h Handler, opts ...RouteOption) {
-	r := app.newRoute(h, opts)
-	app.router.PATCH(path, r.buildHandle())
+	app.root.PATCH(path, h, opts...)
 
 }
 
 // DELETE registers a new DELETE route for a path with handler.
 func (app *Application) DELETE(path string, h Handler, opts ...RouteOption) {
-	r := app.newRoute(h, opts)
-	app.router.DELETE(path, r.buildHandle())
+	app.root.DELETE(path, h, opts...)
+}
+
+// Group creates a group of sub-routes
+func (app *Application) Group(prefix string, opts ...RouteOption) *Group {
+	if len(prefix) == 0 || prefix[0] != '/' {
+		panic("path must begin with '/' in path '" + prefix + "'")
+	}
+
+	// Strip trailing / (if present) as all added sub paths must start with a /
+	if prefix[len(prefix)-1] == '/' {
+		prefix = prefix[:len(prefix)-1]
+	}
+
+	return &Group{
+		prefix:       prefix,
+		routeOptions: append(app.routeOptions, opts...),
+		router:       app.router,
+		logger:       app.logger,
+	}
 }
 
 // execute starts a function in a goroutine.
@@ -182,23 +199,4 @@ func (app *Application) applyOpts(opts []Option) {
 			o.Apply(app)
 		}
 	}
-}
-
-// newRoute creates a new route give Handler and a list of RouteOption.
-func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
-	r := &route{
-		decoder:      app.decoder,
-		encoder:      app.encoder,
-		errorHandler: defaultErrorHandler(app.logger),
-		handler:      h,
-		logger:       app.logger,
-		transformers: []handleTransformer{
-			brwTransformer,
-		},
-	}
-
-	r.applyOpts(app.routeOptions)
-	r.applyOpts(opts)
-
-	return r
 }

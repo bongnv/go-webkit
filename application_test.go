@@ -114,8 +114,23 @@ func Test_applyOpts(t *testing.T) {
 
 func Test_Default(t *testing.T) {
 	app := Default()
-	require.Len(t, app.routeOptions, 3)
-	require.NotNil(t, app.decoder)
+	require.Len(t, app.routeOptions, 5)
 	require.NotNil(t, app.router)
 	require.NotNil(t, app.logger)
+}
+
+func Test_Application_Group(t *testing.T) {
+	app := New()
+	require.Panics(t, func() {
+		app.Group("")
+	}, "must panic with empty path")
+
+	require.Panics(t, func() {
+		app.Group("invalid")
+	}, "must panic with invalid path")
+
+	require.NotPanics(t, func() {
+		g := app.Group("/")
+		require.Empty(t, g.prefix)
+	})
 }
