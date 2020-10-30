@@ -70,3 +70,17 @@ func Test_route_applyOpts(t *testing.T) {
 	r.applyOpts([]RouteOption{mockMiddleware})
 	require.Len(t, r.middlewares, 1)
 }
+
+type mockCustomResp struct{}
+
+func (m mockCustomResp) HTTPResponse() (int, []byte) {
+	return http.StatusAccepted, nil
+}
+
+func Test_writeToHTTPResponse(t *testing.T) {
+	r := &route{}
+	rr := httptest.NewRecorder()
+	err := r.writeToHTTPResponse(rr, mockCustomResp{})
+	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, rr.Code)
+}
