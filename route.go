@@ -25,6 +25,11 @@ func (fn RouteOptionFn) Apply(app *Application) {
 	app.routeOptions = append(app.routeOptions, fn)
 }
 
+// CustomHTTPResponse defines an interface to support custom HTTP response.
+type CustomHTTPResponse interface {
+	HTTPResponse() (int, []byte)
+}
+
 type route struct {
 	decoder      Decoder
 	encoder      Encoder
@@ -57,13 +62,13 @@ func (r *route) buildHandle() httprouter.Handle {
 		}
 
 		resp, err := h(ctx, req)
-		if err == nil {
-			err = r.writeToHTTPResponse(w, resp)
+		if err != nil {
+			r.errorHandler(w, err)
+			return
 		}
 
-		if err != nil {
-			// TODO: Add error handler
-			r.errorHandler(w, err)
+		if errWrite := r.writeToHTTPResponse(w, resp); errWrite != nil {
+			r.logger.Println("Error", errWrite, "while sending response")
 		}
 	}
 }
@@ -72,6 +77,13 @@ func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) err
 	if resp == nil {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
+	}
+
+	if customResp, ok := resp.(CustomHTTPResponse); ok {
+		code, body := customResp.HTTPResponse()
+		w.WriteHeader(code)
+		_, err := w.Write(body)
+		return err
 	}
 
 	return r.encoder.Encode(w, resp)

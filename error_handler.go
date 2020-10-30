@@ -16,9 +16,16 @@ func WithErrorHandler(errHandler ErrorHandler) RouteOptionFn {
 
 func defaultErrorHandler(logger Logger) ErrorHandler {
 	return func(w http.ResponseWriter, errResp error) {
-		w.WriteHeader(http.StatusInternalServerError)
-		if _, err := w.Write([]byte(errResp.Error())); err != nil {
-			logger.Println("Error", err, "while encoding", errResp)
+		code := http.StatusInternalServerError
+		body := []byte(errResp.Error())
+
+		if withCustomResp, ok := errResp.(CustomHTTPResponse); ok {
+			code, body = withCustomResp.HTTPResponse()
+		}
+
+		w.WriteHeader(code)
+		if _, err := w.Write(body); err != nil {
+			logger.Println("Error", err, "write sending response", err)
 		}
 	}
 }
