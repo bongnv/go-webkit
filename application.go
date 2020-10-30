@@ -3,7 +3,6 @@ package webkit
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -27,7 +26,7 @@ func New(opts ...Option) *Application {
 		port:          8080,
 		readyCh:       make(chan struct{}),
 		srvShutdownCh: make(chan struct{}),
-		logger:        log.New(os.Stderr, "", log.LstdFlags),
+		logger:        defaultLogger(),
 	}
 
 	app.applyOpts(opts)
