@@ -87,3 +87,9 @@ func yourInitFunc(app *Application) {
     app.GET("/helle-world", helleWorld, WithErrorHandler(yourCustomErrHandler))
 }
 ```
+
+#### WithGzip
+`WithGzip` enables Gzip compression.
+```go
+   app.GET("/hello-world", helloWorld, WithGzip(DefaultGzipConfig))
+```

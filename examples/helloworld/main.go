@@ -13,7 +13,7 @@ type Request struct {
 }
 
 func main() {
-	app := webkit.New()
+	app := webkit.Default()
 	app.GET("/hello-world/:name", func(ctx context.Context, req webkit.Request) (interface{}, error) {
 		reqDto := &Request{}
 		if err := req.Decode(reqDto); err != nil {

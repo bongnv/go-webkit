@@ -30,6 +30,8 @@ type CustomHTTPResponse interface {
 	HTTPResponse() (int, []byte)
 }
 
+type handleTransformer func(httprouter.Handle) httprouter.Handle
+
 type route struct {
 	decoder      Decoder
 	encoder      Encoder
@@ -37,6 +39,7 @@ type route struct {
 	handler      Handler
 	logger       Logger
 	middlewares  []Middleware
+	transformers []handleTransformer
 }
 
 func (r *route) applyOpts(opts []RouteOption) {
@@ -51,7 +54,7 @@ func (r *route) buildHandle() httprouter.Handle {
 		h = r.middlewares[i](h)
 	}
 
-	return func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
+	handle := func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
 		ctx := httpReq.Context()
 		ctx = context.WithValue(ctx, ctxKeyHTTPResponseWriter, w)
 
@@ -71,6 +74,12 @@ func (r *route) buildHandle() httprouter.Handle {
 			r.logger.Println("Error", errWrite, "while sending response")
 		}
 	}
+
+	for i := len(r.transformers) - 1; i >= 0; i-- {
+		handle = r.transformers[i](handle)
+	}
+
+	return handle
 }
 
 func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) error {

@@ -38,6 +38,7 @@ func Default() *Application {
 	return New(
 		WithRecovery(),
 		WithCORS(DefaultCORSConfig),
+		WithGzip(DefaultGzipConfig),
 	)
 }
 
@@ -191,6 +192,9 @@ func (app *Application) newRoute(h Handler, opts []RouteOption) *route {
 		errorHandler: defaultErrorHandler(app.logger),
 		handler:      h,
 		logger:       app.logger,
+		transformers: []handleTransformer{
+			brwTransformer,
+		},
 	}
 
 	r.applyOpts(app.routeOptions)
