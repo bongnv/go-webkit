@@ -20,3 +20,10 @@ func Test_defaultEncoder(t *testing.T) {
 	require.Equal(t, http.StatusOK, rr.Code)
 	require.Equal(t, "{\"data\":\"mock-data\"}\n", rr.Body.String())
 }
+
+func Test_WithEncoder(t *testing.T) {
+	opt := WithEncoder(&defaultEncoder{})
+	r := &route{}
+	opt(r)
+	require.NotNil(t, r.encoder)
+}
