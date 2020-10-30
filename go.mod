@@ -1,4 +1,4 @@
-module github.com/bongnv/go-webkit
+module github.com/bongnv/gwf
 
 go 1.14
 

@@ -1,4 +1,4 @@
-package webkit
+package gwf
 
 // Option defines an application Option.
 type Option interface {
