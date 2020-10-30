@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	app := webkit.New()
+	app := webkit.Default()
 	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) (interface{}, error) {
 		return "OK", nil
 	})
@@ -86,10 +86,4 @@ func yourCustomErrHandler(w http.ResponseWriter, errResp error) {
 func yourInitFunc(app *Application) {
     app.GET("/helle-world", helleWorld, WithErrorHandler(yourCustomErrHandler))
 }
-```
-
-#### WithGzip
-`WithGzip` enables Gzip compression.
-```go
-   app.GET("/hello-world", helloWorld, WithGzip(DefaultGzipConfig))
 ```
