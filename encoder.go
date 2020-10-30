@@ -11,6 +11,13 @@ type Encoder interface {
 	Encode(w http.ResponseWriter, obj interface{}) error
 }
 
+// WithEncoder specifies the encoder which will be used to encode payload to HTTP response.
+func WithEncoder(e Encoder) RouteOptionFn {
+	return func(r *route) {
+		r.encoder = e
+	}
+}
+
 type defaultEncoder struct{}
 
 func (d *defaultEncoder) Encode(w http.ResponseWriter, obj interface{}) error {
