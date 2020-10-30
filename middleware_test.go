@@ -1,4 +1,4 @@
-package webkit
+package gwf
 
 import (
 	"testing"

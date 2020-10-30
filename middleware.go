@@ -1,4 +1,4 @@
-package webkit
+package gwf
 
 // Middleware defines a middleware to provide additional logic.
 type Middleware func(Handler) Handler

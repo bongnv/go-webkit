@@ -1,10 +1,10 @@
-# go-webkit
+# gwf
 
-[![Build](https://github.com/bongnv/go-webkit/workflows/Build/badge.svg)](https://github.com/bongnv/go-webkit/actions?query=workflow%3ABuild)
-[![codecov](https://codecov.io/gh/bongnv/go-webkit/branch/main/graph/badge.svg?token=0SSLExlCNY)](https://codecov.io/gh/bongnv/go-webkit)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/go-webkit)](https://goreportcard.com/report/github.com/bongnv/go-webkit)
+[![Build](https://github.com/bongnv/gwf/workflows/Build/badge.svg)](https://github.com/bongnv/gwf/actions?query=workflow%3ABuild)
+[![codecov](https://codecov.io/gh/bongnv/gwf/branch/main/graph/badge.svg?token=0SSLExlCNY)](https://codecov.io/gh/bongnv/gwf)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/gwf)](https://goreportcard.com/report/github.com/bongnv/gwf)
 
-A webkit for Go with simple APIs to use. It solves common problems of a web server so engineers can focus on business logic.
+A web framework for Go with simple APIs to use. It solves common problems of a web server so engineers can focus on business logic.
 
 ## Features
 
@@ -13,7 +13,7 @@ A webkit for Go with simple APIs to use. It solves common problems of a web serv
 ## Quick Start
 ### Installation
 ```sh
-go get github.com/bongnv/go-webkit
+go get github.com/bongnv/gwf
 ```
 
 ### Example
@@ -25,12 +25,12 @@ import (
 	"context"
 	"log"
 
-	"github.com/bongnv/go-webkit"
+	"github.com/bongnv/gwf"
 )
 
 func main() {
-	app := webkit.New()
-	app.GET("/hello-world", func(ctx context.Context, req webkit.Request) (interface{}, error) {
+	app := gwf.Default()
+	app.GET("/hello-world", func(ctx context.Context, req gwf.Request) (interface{}, error) {
 		return "OK", nil
 	})
 	log.Println(app.Run())
@@ -45,7 +45,7 @@ An `Option` customizes an `Application` and these are available `Option`:
 `WithLogger` allows to specify a custom implementation of the logger.
 ```go
   logger := log.New(os.Stderr, "", log.LstdFlags)
-  app := webkit.New(WithLogger(logger))
+  app := gwf.New(gwf.WithLogger(logger))
 ```
 
 ### Route Options
@@ -56,21 +56,21 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
 #### WithRecovery
 `WithRecovery` recovers from panics and returns error with 500 status code to clients.
 ```go
-    app.GET("/hello-world", helloWorld, WithRecovery())
+    app.GET("/hello-world", helloWorld, gwf.WithRecovery())
 ```
 
 #### WithDecoder
 `WithDecoder` specifies a custom logic for decoding the request to a request DTO.
 ```go
-   app.GET("/hello-world", helloWorld, WithDecoder(customDecoder))
+   app.GET("/hello-world", helloWorld, gwf.WithDecoder(customDecoder))
 ```
 
 #### WithCORS
 `WithCORS` enables the support for Cross-Origin Resource Sharing. Ref: https://developer.mozilla.org/en/docs/Web/HTTP/Access_control_CORS.
 ```go
-  app := webkit.New(WithCORS(webkit.DefaultCORSConfig))
+  app := gwf.New(gwf.WithCORS(gwf.DefaultCORSConfig))
   // or
-  app.GET("/hello-world", helloWorld, WithCORS(webkit.DefaultCORSConfig))
+  app.GET("/hello-world", helloWorld, gwf.WithCORS(gwf.DefaultCORSConfig))
 ``` 
 
 #### WithErrorHandler
@@ -83,13 +83,7 @@ func yourCustomErrHandler(w http.ResponseWriter, errResp error) {
     }
 }
 
-func yourInitFunc(app *Application) {
-    app.GET("/helle-world", helleWorld, WithErrorHandler(yourCustomErrHandler))
+func yourInitFunc(app *gwf.Application) {
+    app.GET("/hello-world", helloWorld, gwf.WithErrorHandler(yourCustomErrHandler))
 }
-```
-
-#### WithGzip
-`WithGzip` enables Gzip compression.
-```go
-   app.GET("/hello-world", helloWorld, WithGzip(DefaultGzipConfig))
 ```
