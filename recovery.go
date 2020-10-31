@@ -23,7 +23,7 @@ func WithRecovery() RouteOptionFn {
 						}
 						stack := make([]byte, defaultStackSize)
 						length := runtime.Stack(stack, false)
-						msg := fmt.Sprintf("[PANIC RECOVER] %v %s\n", err, stack[:length])
+						msg := fmt.Sprintf("[PANIC RECOVER] %v %s\n", errFromPanic, stack[:length])
 
 						r.logger.Println(msg)
 						err = errFromPanic
