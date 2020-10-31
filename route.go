@@ -27,7 +27,7 @@ func (fn RouteOptionFn) Apply(app *Application) {
 
 // CustomHTTPResponse defines an interface to support custom HTTP response.
 type CustomHTTPResponse interface {
-	HTTPResponse() (int, []byte)
+	WriteTo(w http.ResponseWriter)
 }
 
 type handleTransformer func(httprouter.Handle) httprouter.Handle
@@ -89,10 +89,8 @@ func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) err
 	}
 
 	if customResp, ok := resp.(CustomHTTPResponse); ok {
-		code, body := customResp.HTTPResponse()
-		w.WriteHeader(code)
-		_, err := w.Write(body)
-		return err
+		customResp.WriteTo(w)
+		return nil
 	}
 
 	return r.encoder.Encode(w, resp)

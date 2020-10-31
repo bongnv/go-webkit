@@ -73,8 +73,8 @@ func Test_route_applyOpts(t *testing.T) {
 
 type mockCustomResp struct{}
 
-func (m mockCustomResp) HTTPResponse() (int, []byte) {
-	return http.StatusAccepted, nil
+func (m mockCustomResp) WriteTo(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func Test_writeToHTTPResponse(t *testing.T) {

@@ -24,7 +24,7 @@ func Test_defaultErrorHandler_CustomHTTPResponse(t *testing.T) {
 	}
 	defaultErrorHandler(defaultLogger())(rr, err)
 	require.Equal(t, http.StatusNotFound, rr.Code)
-	require.Equal(t, `{"message":"Resource not found"}`, rr.Body.String())
+	require.Equal(t, "{\"message\":\"Resource not found\"}\n", rr.Body.String())
 }
 
 func Test_defaultErrorHandler_error(t *testing.T) {
