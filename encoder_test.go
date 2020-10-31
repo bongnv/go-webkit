@@ -19,6 +19,7 @@ func Test_defaultEncoder(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, rr.Code)
 	require.Equal(t, "{\"data\":\"mock-data\"}\n", rr.Body.String())
+	require.Equal(t, "application/json", rr.Header().Get(HeaderContentType))
 }
 
 func Test_WithEncoder(t *testing.T) {
