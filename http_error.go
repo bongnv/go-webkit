@@ -11,7 +11,7 @@ type HTTPError struct {
 	Message string `json:"message"`
 }
 
-// HTTPResponse returns HTTP code and body for CustomHTTPResponse.
+// WriteTo implements CustomHTTPResponse. It encodes the response as JSON format.
 func (err *HTTPError) WriteTo(w http.ResponseWriter) {
 	w.Header().Add(HeaderContentType, jsonScheme)
 	w.WriteHeader(err.Code)
