@@ -2,7 +2,7 @@ package gwf
 
 import (
 	"compress/gzip"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -62,27 +62,31 @@ func newGzipRespWriter(level int, bw *bufRespWriter) *gzipResponseWriter {
 	}
 
 	return &gzipResponseWriter{
-		WriteCloser:   w,
+		writer:        w,
 		bufRespWriter: bw,
 	}
 }
 
 type gzipResponseWriter struct {
 	*bufRespWriter
-	io.WriteCloser
+	writer *gzip.Writer
 }
 
-func (gw *gzipResponseWriter) Write(b []byte) (int, error) {
+func (gw gzipResponseWriter) Write(b []byte) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
 
-	return gw.WriteCloser.Write(b)
+	return gw.writer.Write(b)
 }
 
-func (gw *gzipResponseWriter) Close() error {
+func (gw gzipResponseWriter) Close() error {
 	header := gw.bufRespWriter.Header()
 	header.Del(HeaderContentLength)
-	header.Set(HeaderContentEncoding, gzipScheme)
-	return gw.WriteCloser.Close()
+	if gw.statusCode == http.StatusNoContent {
+		gw.writer.Reset(ioutil.Discard)
+	} else {
+		header.Set(HeaderContentEncoding, gzipScheme)
+	}
+	return gw.writer.Close()
 }

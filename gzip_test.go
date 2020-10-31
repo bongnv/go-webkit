@@ -59,3 +59,22 @@ func decodeGzip(body io.Reader) string {
 	s, _ := ioutil.ReadAll(gr)
 	return string(s)
 }
+
+func Test_WithGzip_no_content(t *testing.T) {
+	h := func(rw http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+		rw.WriteHeader(http.StatusNoContent)
+	}
+
+	h = gzipTransformer(DefaultGzipConfig)(h)
+	h = brwTransformer(h)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Add(HeaderAcceptEncoding, gzipScheme)
+	rr := httptest.NewRecorder()
+
+	h(rr, req, nil)
+
+	require.Equal(t, http.StatusNoContent, rr.Code)
+	require.Equal(t, "", rr.Body.String())
+	require.Equal(t, "", rr.Header().Get(HeaderContentEncoding))
+}
