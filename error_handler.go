@@ -19,8 +19,9 @@ func defaultErrorHandler(logger Logger) ErrorHandler {
 		code := http.StatusInternalServerError
 		body := []byte(errResp.Error())
 
-		if withCustomResp, ok := errResp.(CustomHTTPResponse); ok {
-			code, body = withCustomResp.HTTPResponse()
+		if customResp, ok := errResp.(CustomHTTPResponse); ok {
+			customResp.WriteTo(w)
+			return
 		}
 
 		w.WriteHeader(code)

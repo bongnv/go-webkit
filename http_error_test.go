@@ -2,6 +2,7 @@ package gwf
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,8 +15,9 @@ func Test_HTTPError(t *testing.T) {
 	}
 
 	require.EqualError(t, err, "Some error message")
+	rr := httptest.NewRecorder()
+	err.WriteTo(rr)
 
-	code, body := err.HTTPResponse()
-	require.Equal(t, http.StatusNotFound, code)
-	require.Equal(t, `{"message":"Some error message"}`, string(body))
+	require.Equal(t, http.StatusNotFound, rr.Code)
+	require.Equal(t, "{\"message\":\"Some error message\"}\n", rr.Body.String())
 }
