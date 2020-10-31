@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+const (
+	jsonScheme = "application/json"
+)
+
 // Encoder define a request decoder.
 type Encoder interface {
 	// Encode encodes obj and writes to http.ResponseWriter.
@@ -21,6 +25,7 @@ func WithEncoder(e Encoder) RouteOptionFn {
 type defaultEncoder struct{}
 
 func (d *defaultEncoder) Encode(w http.ResponseWriter, obj interface{}) error {
+	w.Header().Add(HeaderContentType, jsonScheme)
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
 }
