@@ -2,6 +2,7 @@ package gwf
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -32,6 +33,7 @@ type bufRespWriter struct {
 }
 
 func (bw *bufRespWriter) WriteHeader(code int) {
+	log.Println("header", code)
 	bw.statusCode = code
 }
 
@@ -44,6 +46,7 @@ func (bw bufRespWriter) Write(b []byte) (int, error) {
 }
 
 func (bw bufRespWriter) Close() error {
+	log.Println("Close", bw.statusCode)
 	bw.ResponseWriter.WriteHeader(bw.statusCode)
 	if bw.statusCode == http.StatusNoContent {
 		return nil
