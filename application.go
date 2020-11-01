@@ -87,6 +87,12 @@ func (app *Application) Component(name string) (interface{}, error) {
 	return app.container.Get(name)
 }
 
+// MustComponent finds and returns a component via name.
+// It panics if there is any error.
+func (app *Application) MustComponent(name string) interface{} {
+	return app.container.MustGet(name)
+}
+
 // Register registers a new component to the application.
 func (app *Application) Register(name string, component interface{}) error {
 	return app.container.Register(name, component)
