@@ -12,6 +12,7 @@ A web framework for Go with simple APIs to use. It solves common problems of a w
 - Panic recovery
 - CORS
 - Gzip compression
+- Dependency injection
 
 ## Quick Start
 ### Installation
@@ -107,5 +108,27 @@ func main() {
     v2.GET("/hello-world", helloWorldV2)
 
     log.Println(app.Run())
+}
+```
+
+### Dependency injection
+
+`gwf` makes dependency injection much easier by `Register`.
+```go
+// Service declares dependencies via `inject` tag.
+type Service struct {
+    DB *db.DB `inject:"db"` 
+    Logger *Logger `inject:"logger"`
+}
+
+func main() {
+    // Logger is provided with default implementation.
+    app := gwf.Default()
+    // Register DB component.
+    app.Register("db", newDB())
+
+    s := &Service{}
+    // Logger and DB will be injected when registering service.
+    app.Register("service", s)
 }
 ```

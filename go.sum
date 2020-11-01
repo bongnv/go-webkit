@@ -1,3 +1,7 @@
+github.com/bongnv/inject v1.0.0-beta.1 h1:3kqHMgz4qwGhadZdxBXfDnnfFh0s+m4O0dawtXIgBss=
+github.com/bongnv/inject v1.0.0-beta.1/go.mod h1:iq0LCxltwwceChiuI6eVRG/gz3rvhWxm8127vuAR/9Q=
+github.com/bongnv/inject v1.0.0-beta.2 h1:kh/ii1Q1HUPw2rku5EmdtFWboAezLovZR5yY0OETluY=
+github.com/bongnv/inject v1.0.0-beta.2/go.mod h1:iq0LCxltwwceChiuI6eVRG/gz3rvhWxm8127vuAR/9Q=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=

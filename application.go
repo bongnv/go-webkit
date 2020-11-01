@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/bongnv/inject"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -21,8 +22,9 @@ type Handler func(ctx context.Context, req Request) (interface{}, error)
 func New(opts ...Option) *Application {
 	logger := defaultLogger()
 	app := &Application{
-		router: httprouter.New(),
-		port:   8080,
+		container: inject.New(),
+		router:    httprouter.New(),
+		port:      8080,
 		routeOptions: []RouteOption{
 			WithDecoder(newDecoder()),
 			WithEncoder(newEncoder()),
@@ -40,6 +42,7 @@ func New(opts ...Option) *Application {
 // Default returns an Application with a default set of configurations.
 func Default() *Application {
 	return New(
+		WithLogger(defaultLogger()),
 		WithRecovery(),
 		WithCORS(DefaultCORSConfig),
 		WithGzip(DefaultGzipConfig),
@@ -52,6 +55,7 @@ type Application struct {
 	logger       Logger
 	routeOptions []RouteOption
 
+	container     *inject.Container
 	inShutdown    int32
 	readyCh       chan struct{}
 	root          *Group
@@ -79,6 +83,22 @@ func (app *Application) Run() error {
 	}
 
 	return nil
+}
+
+// Component finds and returns a component via name.
+// It returns an error if the requested component couldn't be found.
+func (app *Application) Component(name string) (interface{}, error) {
+	return app.container.Get(name)
+}
+
+// Register registers a new component to the application.
+func (app *Application) Register(name string, component interface{}) error {
+	return app.container.Register(name, component)
+}
+
+// MustRegister registers a new component to the application. It panics if there is any error.
+func (app *Application) MustRegister(name string, component interface{}) {
+	app.container.MustRegister(name, component)
 }
 
 // GET registers a new GET route for a path with handler.
