@@ -16,6 +16,7 @@ A web framework for Go with simple APIs to use. It solves common problems of a w
 
 ## Quick Start
 ### Installation
+Make sure Go (**version 1.13+ is required**) is installed.
 ```sh
 go get github.com/bongnv/gwf
 ```
