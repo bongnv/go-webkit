@@ -143,4 +143,5 @@ func Test_Component(t *testing.T) {
 	require.NotNil(t, l)
 	_, ok := l.(Logger)
 	require.True(t, ok)
+	require.NotNil(t, app.MustComponent("logger"))
 }
