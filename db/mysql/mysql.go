@@ -40,3 +40,10 @@ func WithMYSQL(cfg Config) gwf.OptionFn {
 		app.MustRegister("db", db)
 	}
 }
+
+// WithMYSQLByDSN is a short form of WithMYSQL by using dsn only.
+func WithMYSQLByDSN(dsn string) gwf.OptionFn {
+	return WithMYSQL(Config{
+		DSN: dsn,
+	})
+}
