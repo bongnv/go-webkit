@@ -39,7 +39,7 @@ func New(opts ...Option) *Application {
 	return app
 }
 
-// Default
+// Default returns an Application with a default set of configurations.
 func Default(opts ...Option) *Application {
 	opts = append(DefaultApp, opts...)
 	return New(opts...)
