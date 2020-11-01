@@ -39,14 +39,10 @@ func New(opts ...Option) *Application {
 	return app
 }
 
-// Default returns an Application with a default set of configurations.
-func Default() *Application {
-	return New(
-		WithLogger(defaultLogger()),
-		WithRecovery(),
-		WithCORS(DefaultCORSConfig),
-		WithGzip(DefaultGzipConfig),
-	)
+// Default
+func Default(opts ...Option) *Application {
+	opts = append(DefaultApp, opts...)
+	return New(opts...)
 }
 
 // Application is a web application.
