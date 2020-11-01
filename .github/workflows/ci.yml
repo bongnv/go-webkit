@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - beta
   pull_request:
     branches:
       - main
+      - beta
 
 env:
   GO111MODULE: on
@@ -67,3 +69,16 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           allow-initial-development-versions: true
+
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release -d --debug
