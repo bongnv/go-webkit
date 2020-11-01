@@ -18,6 +18,7 @@ func WithLogger(l Logger) OptionFn {
 	return func(app *Application) {
 		if l != nil {
 			app.logger = l
+			app.MustRegister("logger", l)
 		}
 	}
 }

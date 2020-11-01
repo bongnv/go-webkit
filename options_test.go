@@ -11,7 +11,7 @@ import (
 func Test_WithLogger(t *testing.T) {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	opt := WithLogger(logger)
-	app := &Application{}
+	app := New()
 	opt.Apply(app)
 	require.Equal(t, logger, app.logger)
 }
