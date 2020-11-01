@@ -22,8 +22,8 @@ func Test_WithMYSQL(t *testing.T) {
 	require.IsType(t, &gorm.DB{}, component)
 }
 
-func Test_WithMYSQL_panic(t *testing.T) {
+func Test_WithMYSQLByDSN_panic(t *testing.T) {
 	require.Panics(t, func() {
-		_ = gwf.New(WithMYSQL(Config{}))
+		_ = gwf.New(WithMYSQLByDSN(""))
 	}, "panics with default config as there is no connection")
 }
