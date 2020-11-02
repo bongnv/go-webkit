@@ -15,3 +15,10 @@ func Test_WithLogger(t *testing.T) {
 	opt.Apply(app)
 	require.Equal(t, logger, app.logger)
 }
+
+func Test_WithAddress(t *testing.T) {
+	opt := WithAddress(":http")
+	app := New()
+	opt.Apply(app)
+	require.Equal(t, ":http", app.addr)
+}

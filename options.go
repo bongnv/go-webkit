@@ -22,3 +22,10 @@ func WithLogger(l Logger) OptionFn {
 		}
 	}
 }
+
+// WithAddress specifies the TCP address for the server to listen on,
+func WithAddress(addr string) OptionFn {
+	return func(app *Application) {
+		app.addr = addr
+	}
+}
