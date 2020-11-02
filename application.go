@@ -2,7 +2,6 @@ package gwf
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -24,7 +23,7 @@ func New(opts ...Option) *Application {
 	app := &Application{
 		container: inject.New(),
 		router:    httprouter.New(),
-		port:      8080,
+		addr:      ":8080",
 		routeOptions: []RouteOption{
 			WithDecoder(newDecoder()),
 			WithEncoder(newEncoder()),
@@ -47,7 +46,7 @@ func Default(opts ...Option) *Application {
 
 // Application is a web application.
 type Application struct {
-	port         int
+	addr         string
 	logger       Logger
 	routeOptions []RouteOption
 
@@ -166,24 +165,19 @@ func (app *Application) listenAndServe() error {
 
 	app.srv = &http.Server{
 		Handler: app.router,
-		Addr:    fmt.Sprint(":", app.port),
+		Addr:    app.addr,
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	addr := fmt.Sprint(":", app.port)
-	if addr == "" {
-		addr = ":http"
-	}
-
-	ln, err := net.Listen("tcp", addr)
+	ln, err := net.Listen("tcp", app.addr)
 	if err != nil {
 		return err
 	}
 
 	close(app.readyCh)
-	app.logger.Println("Serving at port", app.port)
+	app.logger.Println("Serving at addr", app.addr)
 	return app.srv.Serve(ln)
 }
 
