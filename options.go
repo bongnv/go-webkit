@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 // Option defines an application Option.
 type Option interface {

@@ -1,8 +1,8 @@
-# gwf
+# nanny
 
-[![Build](https://github.com/bongnv/gwf/workflows/Build/badge.svg)](https://github.com/bongnv/gwf/actions?query=workflow%3ABuild)
-[![codecov](https://codecov.io/gh/bongnv/gwf/branch/main/graph/badge.svg?token=0SSLExlCNY)](https://codecov.io/gh/bongnv/gwf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/gwf)](https://goreportcard.com/report/github.com/bongnv/gwf)
+[![Build](https://github.com/bongnv/nanny/workflows/Build/badge.svg)](https://github.com/bongnv/nanny/actions?query=workflow%3ABuild)
+[![codecov](https://codecov.io/gh/bongnv/nanny/branch/main/graph/badge.svg?token=0SSLExlCNY)](https://codecov.io/gh/bongnv/nanny)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/nanny)](https://goreportcard.com/report/github.com/bongnv/nanny)
 
 A web framework for Go with simple APIs to use. It solves common problems of a web server so engineers can focus on business logic.
 
@@ -18,7 +18,7 @@ A web framework for Go with simple APIs to use. It solves common problems of a w
 ### Installation
 Make sure Go (**version 1.13+ is required**) is installed.
 ```sh
-go get github.com/bongnv/gwf
+go get github.com/bongnv/nanny
 ```
 
 ### Example
@@ -30,12 +30,12 @@ import (
 	"context"
 	"log"
 
-	"github.com/bongnv/gwf"
+	"github.com/bongnv/nanny"
 )
 
 func main() {
-    app := gwf.Default()
-    app.GET("/hello-world", func(ctx context.Context, req gwf.Request) (interface{}, error) {
+    app := nanny.Default()
+    app.GET("/hello-world", func(ctx context.Context, req nanny.Request) (interface{}, error) {
         return "OK", nil
     })
     log.Println(app.Run())
@@ -50,7 +50,7 @@ An `Option` customizes an `Application` and these are available `Option`:
 `WithLogger` allows to specify a custom implementation of the logger.
 ```go
   logger := log.New(os.Stderr, "", log.LstdFlags)
-  app := gwf.New(gwf.WithLogger(logger))
+  app := nanny.New(nanny.WithLogger(logger))
 ```
 
 ### Route Options
@@ -61,21 +61,21 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
 #### WithRecovery
 `WithRecovery` recovers from panics and returns error with 500 status code to clients.
 ```go
-    app.GET("/hello-world", helloWorld, gwf.WithRecovery())
+    app.GET("/hello-world", helloWorld, nanny.WithRecovery())
 ```
 
 #### WithDecoder
 `WithDecoder` specifies a custom logic for decoding the request to a request DTO.
 ```go
-   app.GET("/hello-world", helloWorld, gwf.WithDecoder(customDecoder))
+   app.GET("/hello-world", helloWorld, nanny.WithDecoder(customDecoder))
 ```
 
 #### WithCORS
 `WithCORS` enables the support for Cross-Origin Resource Sharing. Ref: https://developer.mozilla.org/en/docs/Web/HTTP/Access_control_CORS.
 ```go
-  app := gwf.New(gwf.WithCORS(gwf.DefaultCORSConfig))
+  app := nanny.New(nanny.WithCORS(nanny.DefaultCORSConfig))
   // or
-  app.GET("/hello-world", helloWorld, gwf.WithCORS(gwf.DefaultCORSConfig))
+  app.GET("/hello-world", helloWorld, nanny.WithCORS(nanny.DefaultCORSConfig))
 ``` 
 
 #### WithErrorHandler
@@ -88,17 +88,17 @@ func yourCustomErrHandler(w http.ResponseWriter, errResp error) {
     }
 }
 
-func yourInitFunc(app *gwf.Application) {
-    app.GET("/hello-world", helloWorld, gwf.WithErrorHandler(yourCustomErrHandler))
+func yourInitFunc(app *nanny.Application) {
+    app.GET("/hello-world", helloWorld, nanny.WithErrorHandler(yourCustomErrHandler))
 }
 ```
 
 ### Grouping routes
 
-`gwf` supports grouping routes which share the same prefix or options for better readability.
+`nanny` supports grouping routes which share the same prefix or options for better readability.
 ```go
 func main() {
-    app := gwf.Default()
+    app := nanny.Default()
 
     // v1 group
     v1 := app.Group("/v1", WithV1Option())
@@ -114,7 +114,7 @@ func main() {
 
 ### Dependency injection
 
-`gwf` makes dependency injection much easier by `Register`.
+`nanny` makes dependency injection much easier by `Register`.
 ```go
 // Service declares dependencies via `inject` tag.
 type Service struct {
@@ -124,7 +124,7 @@ type Service struct {
 
 func main() {
     // Logger is provided with default implementation.
-    app := gwf.Default()
+    app := nanny.Default()
     // Register DB component.
     app.Register("db", newDB())
 

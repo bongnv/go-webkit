@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 // Plugin is a set of Option to enrich an application.
 type Plugin []Option

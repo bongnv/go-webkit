@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 // Middleware defines a middleware to provide additional logic.
 type Middleware func(Handler) Handler

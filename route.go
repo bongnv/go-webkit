@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 import (
 	"context"
@@ -38,7 +38,9 @@ type route struct {
 	errorHandler ErrorHandler
 	handler      Handler
 	logger       Logger
+	method       string
 	middlewares  []Middleware
+	path         string
 	transformers []handleTransformer
 }
 
