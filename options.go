@@ -18,6 +18,14 @@ func WithLogger(l Logger) OptionFn {
 	return func(app *Application) {
 		if l != nil {
 			app.logger = l
+			app.MustRegister("logger", l)
 		}
+	}
+}
+
+// WithAddress specifies the TCP address for the server to listen on,
+func WithAddress(addr string) OptionFn {
+	return func(app *Application) {
+		app.addr = addr
 	}
 }

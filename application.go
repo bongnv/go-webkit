@@ -2,7 +2,6 @@ package gwf
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/bongnv/inject"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -20,7 +20,8 @@ type Handler func(ctx context.Context, req Request) (interface{}, error)
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
-		port:          8080,
+		addr:          ":8080",
+		container:     inject.New(),
 		readyCh:       make(chan struct{}),
 		srvShutdownCh: make(chan struct{}),
 		logger:        defaultLogger(),
@@ -42,22 +43,20 @@ func New(opts ...Option) *Application {
 }
 
 // Default returns an Application with a default set of configurations.
-func Default() *Application {
-	return New(
-		WithRecovery(),
-		WithCORS(DefaultCORSConfig),
-		WithGzip(DefaultGzipConfig),
-	)
+func Default(opts ...Option) *Application {
+	opts = append(DefaultApp, opts...)
+	return New(opts...)
 }
 
 // Application is a web application.
 type Application struct {
 	*RouteGroup
 
-	port         int
+	addr         string
 	logger       Logger
 	routeOptions []RouteOption
 
+	container     *inject.Container
 	inShutdown    int32
 	readyCh       chan struct{}
 	routes        []*route
@@ -86,6 +85,28 @@ func (app *Application) Run() error {
 	return nil
 }
 
+// Component finds and returns a component via name.
+// It returns an error if the requested component couldn't be found.
+func (app *Application) Component(name string) (interface{}, error) {
+	return app.container.Get(name)
+}
+
+// MustComponent finds and returns a component via name.
+// It panics if there is any error.
+func (app *Application) MustComponent(name string) interface{} {
+	return app.container.MustGet(name)
+}
+
+// Register registers a new component to the application.
+func (app *Application) Register(name string, component interface{}) error {
+	return app.container.Register(name, component)
+}
+
+// MustRegister registers a new component to the application. It panics if there is any error.
+func (app *Application) MustRegister(name string, component interface{}) {
+	app.container.MustRegister(name, component)
+}
+
 // execute starts a function in a goroutine.
 // It tracks the execution in a WaitGroup for graceful shutdown.
 func (app *Application) execute(fn func()) {
@@ -104,23 +125,18 @@ func (app *Application) listenAndServe() error {
 
 	app.srv = &http.Server{
 		Handler:      app.buildHTTPHandler(),
-		Addr:         fmt.Sprint(":", app.port),
+		Addr:         app.addr,
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout:  5 * time.Second,
 	}
 
-	addr := fmt.Sprint(":", app.port)
-	if addr == "" {
-		addr = ":http"
-	}
-
-	ln, err := net.Listen("tcp", addr)
+	ln, err := net.Listen("tcp", app.addr)
 	if err != nil {
 		return err
 	}
 
 	close(app.readyCh)
-	app.logger.Println("Serving at port", app.port)
+	app.logger.Println("Serving at addr", app.addr)
 	return app.srv.Serve(ln)
 }
 

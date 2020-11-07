@@ -107,7 +107,7 @@ func Test_graceful_shutdown(t *testing.T) {
 func Test_applyOpts(t *testing.T) {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	opt := WithLogger(logger)
-	app := &Application{}
+	app := New()
 	app.applyOpts([]Option{opt})
 	require.Equal(t, logger, app.logger)
 }
@@ -132,4 +132,15 @@ func Test_Application_Group(t *testing.T) {
 		g := app.Group("/")
 		require.Empty(t, g.prefix)
 	})
+}
+
+func Test_Component(t *testing.T) {
+	app := New()
+	require.NoError(t, app.Register("logger", defaultLogger()))
+	l, err := app.Component("logger")
+	require.NoError(t, err)
+	require.NotNil(t, l)
+	_, ok := l.(Logger)
+	require.True(t, ok)
+	require.NotNil(t, app.MustComponent("logger"))
 }
