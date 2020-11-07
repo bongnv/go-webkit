@@ -26,19 +26,16 @@ func (g *RouteGroup) POST(path string, h Handler, opts ...RouteOption) {
 // PUT registers a new PUT route for a path with handler.
 func (g *RouteGroup) PUT(path string, h Handler, opts ...RouteOption) {
 	g.addRoute(http.MethodPut, path, h, opts)
-
 }
 
 // PATCH registers a new PATCH route for a path with handler.
 func (g *RouteGroup) PATCH(path string, h Handler, opts ...RouteOption) {
 	g.addRoute(http.MethodPatch, path, h, opts)
-
 }
 
 // DELETE registers a new DELETE route for a path with handler.
 func (g *RouteGroup) DELETE(path string, h Handler, opts ...RouteOption) {
 	g.addRoute(http.MethodDelete, path, h, opts)
-
 }
 
 // Group creates a group of sub-routes
@@ -53,7 +50,7 @@ func (g *RouteGroup) Group(prefix string, opts ...RouteOption) *RouteGroup {
 	}
 
 	return &RouteGroup{
-		prefix:       prefix,
+		prefix:       g.prefix + prefix,
 		routeOptions: append(g.routeOptions, opts...),
 		app:          g.app,
 	}
