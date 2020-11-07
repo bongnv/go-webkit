@@ -3,7 +3,7 @@ package nanny
 import "net/http"
 
 // ErrorHandler defines a handler which handles error.
-type ErrorHandler func(w http.ResponseWriter, req *http.Request, err error) error
+type ErrorHandler func(w http.ResponseWriter, err error) error
 
 // WithErrorHandler is a RouteOption to specify a custom ErrorHandler.
 func WithErrorHandler(errHandler ErrorHandler) RouteOptionFn {
@@ -15,7 +15,7 @@ func WithErrorHandler(errHandler ErrorHandler) RouteOptionFn {
 }
 
 func defaultErrorHandler() ErrorHandler {
-	return func(w http.ResponseWriter, req *http.Request, errResp error) error {
+	return func(w http.ResponseWriter, errResp error) error {
 		code := http.StatusInternalServerError
 		body := []byte(errResp.Error())
 

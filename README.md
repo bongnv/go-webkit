@@ -81,7 +81,7 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
 #### WithErrorHandler
 `WithErrorHandler` allows to specify a custom `ErrorHandler` which converts an error into HTTP response.
 ```go
-func yourCustomErrHandler(w http.ResponseWriter, req *http.Request, errResp error) error {
+func yourCustomErrHandler(w http.ResponseWriter, errResp error) error {
     w.WriteHeader(http.StatusInternalServerError)
     if err := encoder.Encode(w, errResp); err != nil {
         logger.Println("Error", err, "while encoding", errResp)
