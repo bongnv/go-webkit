@@ -12,7 +12,7 @@ const (
 // Encoder define a request decoder.
 type Encoder interface {
 	// Encode encodes obj and writes to http.ResponseWriter.
-	Encode(w http.ResponseWriter, obj interface{}) error
+	Encode(w http.ResponseWriter, resp interface{}) error
 }
 
 // WithEncoder specifies the encoder which will be used to encode payload to HTTP response.
@@ -24,12 +24,18 @@ func WithEncoder(e Encoder) RouteOptionFn {
 
 type defaultEncoder struct{}
 
-func (d *defaultEncoder) Encode(w http.ResponseWriter, obj interface{}) error {
+func (e defaultEncoder) Encode(w http.ResponseWriter, resp interface{}) error {
+	if resp == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
+	if customResp, ok := resp.(CustomHTTPResponse); ok {
+		customResp.WriteTo(w)
+		return nil
+	}
+
 	w.Header().Add(HeaderContentType, jsonScheme)
 	enc := json.NewEncoder(w)
-	return enc.Encode(obj)
-}
-
-func newEncoder() Encoder {
-	return &defaultEncoder{}
+	return enc.Encode(resp)
 }

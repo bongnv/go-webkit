@@ -72,7 +72,7 @@ func (r *route) buildHandle() httprouter.Handle {
 			return
 		}
 
-		if errWrite := r.writeToHTTPResponse(w, resp); errWrite != nil {
+		if errWrite := r.encoder.Encode(w, resp); errWrite != nil {
 			r.logger.Println("Error", errWrite, "while sending response")
 		}
 	}
@@ -82,18 +82,4 @@ func (r *route) buildHandle() httprouter.Handle {
 	}
 
 	return handle
-}
-
-func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) error {
-	if resp == nil {
-		w.WriteHeader(http.StatusNoContent)
-		return nil
-	}
-
-	if customResp, ok := resp.(CustomHTTPResponse); ok {
-		customResp.WriteTo(w)
-		return nil
-	}
-
-	return r.encoder.Encode(w, resp)
 }
