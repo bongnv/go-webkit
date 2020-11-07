@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"github.com/bongnv/gwf"
+	"github.com/bongnv/nanny"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -20,8 +20,8 @@ type Config struct {
 }
 
 // WithMYSQL intializes an MySQL instance and registers it to the Application.
-func WithMYSQL(cfg Config) gwf.OptionFn {
-	return func(app *gwf.Application) {
+func WithMYSQL(cfg Config) nanny.OptionFn {
+	return func(app *nanny.Application) {
 		gormCfg := mysql.Config{
 			DriverName:                cfg.DriverName,
 			DSN:                       cfg.DSN,
@@ -42,7 +42,7 @@ func WithMYSQL(cfg Config) gwf.OptionFn {
 }
 
 // WithMYSQLByDSN is a short form of WithMYSQL by using dsn only.
-func WithMYSQLByDSN(dsn string) gwf.OptionFn {
+func WithMYSQLByDSN(dsn string) nanny.OptionFn {
 	return WithMYSQL(Config{
 		DSN: dsn,
 	})

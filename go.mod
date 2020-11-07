@@ -1,4 +1,4 @@
-module github.com/bongnv/gwf
+module github.com/bongnv/nanny
 
 go 1.13
 

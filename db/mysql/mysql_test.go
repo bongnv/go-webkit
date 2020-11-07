@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/bongnv/gwf"
+	"github.com/bongnv/nanny"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -14,7 +14,7 @@ func Test_WithMYSQL(t *testing.T) {
 	require.NoError(t, err)
 	rows := sqlmock.NewRows([]string{"VERSION()"}).AddRow("5.6")
 	mock.ExpectQuery("SELECT VERSION()").WillReturnRows(rows)
-	app := gwf.New(WithMYSQL(Config{
+	app := nanny.New(WithMYSQL(Config{
 		Conn: db,
 	}))
 	component, err := app.Component("db")
@@ -24,6 +24,6 @@ func Test_WithMYSQL(t *testing.T) {
 
 func Test_WithMYSQLByDSN_panic(t *testing.T) {
 	require.Panics(t, func() {
-		_ = gwf.New(WithMYSQLByDSN(""))
+		_ = nanny.New(WithMYSQLByDSN(""))
 	}, "panics with default config as there is no connection")
 }
