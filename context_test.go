@@ -55,3 +55,8 @@ func Test_loggerFromCtx(t *testing.T) {
 	logger := loggerFromCtx(ctx)
 	require.NotNil(t, logger)
 }
+
+func Test_loggerFromCtx_nil(t *testing.T) {
+	logger := loggerFromCtx(context.Background())
+	require.Nil(t, logger)
+}

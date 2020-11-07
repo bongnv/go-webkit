@@ -66,7 +66,9 @@ func (r *route) buildHandle() httprouter.Handle {
 
 		resp, err := h(ctx, req)
 		if err != nil {
-			r.errorHandler(w, httpReq, err)
+			if errHandle := r.errorHandler(w, httpReq, err); errHandle != nil {
+				r.logger.Println("Error", errHandle, "while handling error")
+			}
 			return
 		}
 
