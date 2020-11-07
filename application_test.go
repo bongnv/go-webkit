@@ -14,7 +14,7 @@ import (
 
 func executeRequest(app *Application, req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
-	app.router.ServeHTTP(rr, req)
+	app.buildHTTPHandler().ServeHTTP(rr, req)
 
 	return rr
 }
@@ -115,7 +115,6 @@ func Test_applyOpts(t *testing.T) {
 func Test_Default(t *testing.T) {
 	app := Default()
 	require.Len(t, app.routeOptions, 5)
-	require.NotNil(t, app.router)
 	require.NotNil(t, app.logger)
 }
 
