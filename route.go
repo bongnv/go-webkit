@@ -1,7 +1,6 @@
 package nanny
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -58,7 +57,6 @@ func (r *route) buildHandle() httprouter.Handle {
 
 	handle := func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
 		ctx := httpReq.Context()
-		ctx = context.WithValue(ctx, ctxKeyHTTPResponseWriter, w)
 
 		req := &requestImpl{
 			decoder: r.decoder,
@@ -68,7 +66,9 @@ func (r *route) buildHandle() httprouter.Handle {
 
 		resp, err := h(ctx, req)
 		if err != nil {
-			r.errorHandler(w, err)
+			if errHandle := r.errorHandler(w, httpReq, err); errHandle != nil {
+				r.logger.Println("Error", errHandle, "while handling error")
+			}
 			return
 		}
 
