@@ -20,7 +20,6 @@ func (g *RouteGroup) GET(path string, h Handler, opts ...RouteOption) {
 // POST registers a new POST route for a path with handler.
 func (g *RouteGroup) POST(path string, h Handler, opts ...RouteOption) {
 	g.addRoute(http.MethodPost, path, h, opts)
-
 }
 
 // PUT registers a new PUT route for a path with handler.
