@@ -57,7 +57,7 @@ func (g *RouteGroup) Group(prefix string, opts ...RouteOption) *RouteGroup {
 
 func (g *RouteGroup) addRoute(method, path string, h Handler, opts []RouteOption) {
 	r := &route{
-		errorHandler: defaultErrorHandler(g.app.logger),
+		errorHandler: defaultErrorHandler(),
 		handler:      h,
 		logger:       g.app.logger,
 		transformers: []handleTransformer{

@@ -19,7 +19,7 @@ func Test_Recovery(t *testing.T) {
 			panic("random panic")
 		},
 		logger:       log.New(&b, "", log.LstdFlags),
-		errorHandler: defaultErrorHandler(log.New(&b, "", log.LstdFlags)),
+		errorHandler: defaultErrorHandler(),
 		middlewares:  nil,
 	}
 

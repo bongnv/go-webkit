@@ -28,6 +28,7 @@ func New(opts ...Option) *Application {
 	}
 
 	app.applyOpts([]Option{
+		contextInjector(),
 		WithDecoder(newDecoder()),
 		WithEncoder(newEncoder()),
 	})
