@@ -90,7 +90,7 @@ func Test_graceful_shutdown(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(1 * time.Second):
 		require.Fail(t, "Test times out")
 	case <-runFinished:
 	}
