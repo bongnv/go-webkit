@@ -26,10 +26,13 @@ func Test_Recovery(t *testing.T) {
 	WithRecovery().ApplyRoute(r)
 	handle := r.buildHandle()
 	rr := httptest.NewRecorder()
+
 	require.NotPanics(t, func() {
 		handle(rr, &http.Request{}, nil)
 	})
-	require.Equal(t, http.StatusInternalServerError, rr.Code)
-	require.Equal(t, "random panic", rr.Body.String())
+
+	require.Equal(t, http.StatusServiceUnavailable, rr.Code)
+	require.Equal(t, "{\"message\":\"Service Unavailable\"}\n", rr.Body.String())
 	require.True(t, strings.Contains(b.String(), "[PANIC RECOVER]"))
+	require.True(t, strings.Contains(b.String(), "random panic"))
 }

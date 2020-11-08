@@ -17,6 +17,15 @@ import (
 // Handler defines a function to serve HTTP requests.
 type Handler func(ctx context.Context, req Request) (interface{}, error)
 
+// DefaultApp is a plugin to provide a set of common options for an application.
+var DefaultApp Plugin = []Option{
+	WithLogger(defaultLogger()),
+	WithRecovery(),
+	WithCORS(DefaultCORSConfig),
+	WithGzip(DefaultGzipConfig),
+	WithTimeout(1 * time.Second),
+}
+
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
@@ -28,6 +37,7 @@ func New(opts ...Option) *Application {
 	}
 
 	app.applyOpts([]Option{
+		injectTimeoutMiddleware(),
 		contextInjector(),
 		WithDecoder(newDecoder()),
 		WithEncoder(defaultEncoder{}),

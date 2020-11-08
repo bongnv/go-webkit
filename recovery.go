@@ -26,7 +26,7 @@ func WithRecovery() RouteOptionFn {
 						msg := fmt.Sprintf("[PANIC RECOVER] %v %s\n", errFromPanic, stack[:length])
 
 						r.logger.Println(msg)
-						err = errFromPanic
+						err = panicErr
 					}
 				}()
 

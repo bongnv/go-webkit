@@ -7,11 +7,3 @@ type Plugin []Option
 func (p Plugin) Apply(app *Application) {
 	app.applyOpts(p)
 }
-
-// DefaultApp is a plugin to provide a set of common options for an application.
-var DefaultApp Plugin = []Option{
-	WithLogger(defaultLogger()),
-	WithRecovery(),
-	WithCORS(DefaultCORSConfig),
-	WithGzip(DefaultGzipConfig),
-}

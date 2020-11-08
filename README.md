@@ -78,6 +78,12 @@ For convenience, a `RouteOption` can be a `Option` for the `Application`. In thi
   app.GET("/hello-world", helloWorld, nanny.WithCORS(nanny.DefaultCORSConfig))
 ``` 
 
+#### WithTimeout
+`WithTimeout` allows to specify the time limit for each route. 1 second timeout is included in the default app.
+```go
+  app.GET("/hello-world", helloWorld, nanny.WithTimeout(time.Second)
+```
+
 #### WithErrorHandler
 `WithErrorHandler` allows to specify a custom `ErrorHandler` which converts an error into HTTP response.
 ```go
