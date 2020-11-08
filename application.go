@@ -31,9 +31,9 @@ func New(opts ...Option) *Application {
 	app := &Application{
 		addr:           ":8080",
 		container:      inject.New(),
+		logger:         defaultLogger(),
 		readyCh:        make(chan struct{}),
 		shutdownSignal: make(chan struct{}),
-		logger:         defaultLogger(),
 	}
 
 	app.applyOpts([]Option{
@@ -64,15 +64,14 @@ type Application struct {
 	*RouteGroup
 
 	addr         string
+	container    *inject.Container
 	logger       Logger
+	pprofSrv     *http.Server
+	readyCh      chan struct{}
 	routeOptions []RouteOption
-
-	container *inject.Container
-	readyCh   chan struct{}
-	routes    []*route
-	srv       *http.Server
-	pprofSrv  *http.Server
-	wg        sync.WaitGroup
+	routes       []*route
+	srv          *http.Server
+	wg           sync.WaitGroup
 
 	shutdownOnce   sync.Once
 	shutdownSignal chan struct{}
