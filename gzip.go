@@ -42,51 +42,62 @@ func gzipTransformer(cfg GzipConfig) handleTransformer {
 				return
 			}
 
-			bw, ok := rw.(*bufRespWriter)
-			if !ok {
-				next(rw, req, params)
-				return
+			logger := loggerFromCtx(req.Context())
+			w, err := gzip.NewWriterLevel(rw, cfg.Level)
+			if err != nil {
+				logger.Println("Fallback to default compression due to", err)
+				w = gzip.NewWriter(rw)
 			}
 
-			grw := newGzipRespWriter(cfg.Level, bw)
+			grw := &gzipResponseWriter{
+				writer:         w,
+				ResponseWriter: rw,
+			}
+
 			next(grw, req, params)
-			_ = grw.Close()
+			if err := grw.Close(); err != nil {
+				logger.Println("Error while closing gzip writer", err)
+			}
 		}
 	}
 }
 
-func newGzipRespWriter(level int, bw *bufRespWriter) *gzipResponseWriter {
-	w, err := gzip.NewWriterLevel(bw, level)
-	if err != nil {
-		w = gzip.NewWriter(bw)
-	}
-
-	return &gzipResponseWriter{
-		writer:        w,
-		bufRespWriter: bw,
-	}
-}
-
 type gzipResponseWriter struct {
-	*bufRespWriter
-	writer *gzip.Writer
+	http.ResponseWriter
+	writer     *gzip.Writer
+	statusCode int
 }
 
-func (gw gzipResponseWriter) Write(b []byte) (int, error) {
-	if len(b) == 0 {
-		return 0, nil
+func (gw *gzipResponseWriter) WriteHeader(statusCode int) {
+	gw.statusCode = statusCode
+
+	if gw.isBodyAllowed() {
+		header := gw.ResponseWriter.Header()
+		header.Del(HeaderContentLength)
+		header.Set(HeaderContentEncoding, gzipScheme)
+	} else {
+		gw.writer.Reset(ioutil.Discard)
+	}
+
+	gw.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (gw *gzipResponseWriter) Write(b []byte) (int, error) {
+	if gw.statusCode == 0 {
+		gw.WriteHeader(http.StatusOK)
 	}
 
 	return gw.writer.Write(b)
 }
 
-func (gw gzipResponseWriter) Close() error {
-	header := gw.bufRespWriter.Header()
-	header.Del(HeaderContentLength)
-	if gw.statusCode == http.StatusNoContent {
-		gw.writer.Reset(ioutil.Discard)
-	} else {
-		header.Set(HeaderContentEncoding, gzipScheme)
+func (gw *gzipResponseWriter) Close() error {
+	if gw.statusCode == 0 {
+		gw.WriteHeader(http.StatusOK)
 	}
+
 	return gw.writer.Close()
+}
+
+func (gw gzipResponseWriter) isBodyAllowed() bool {
+	return gw.statusCode != http.StatusNoContent
 }

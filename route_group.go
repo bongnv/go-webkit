@@ -60,11 +60,8 @@ func (g *RouteGroup) addRoute(method, path string, h Handler, opts []RouteOption
 		errorHandler: defaultErrorHandler(),
 		handler:      h,
 		logger:       g.app.logger,
-		transformers: []handleTransformer{
-			brwTransformer,
-		},
-		method: method,
-		path:   g.prefix + path,
+		method:       method,
+		path:         g.prefix + path,
 	}
 
 	r.applyOpts(g.routeOptions)
