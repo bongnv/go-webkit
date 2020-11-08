@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/bongnv/inject"
@@ -24,16 +23,17 @@ var DefaultApp Plugin = []Option{
 	WithCORS(DefaultCORSConfig),
 	WithGzip(DefaultGzipConfig),
 	WithTimeout(1 * time.Second),
+	WithPProf(":8081"),
 }
 
 // New creates a new application.
 func New(opts ...Option) *Application {
 	app := &Application{
-		addr:          ":8080",
-		container:     inject.New(),
-		readyCh:       make(chan struct{}),
-		srvShutdownCh: make(chan struct{}),
-		logger:        defaultLogger(),
+		addr:           ":8080",
+		container:      inject.New(),
+		readyCh:        make(chan struct{}),
+		shutdownSignal: make(chan struct{}),
+		logger:         defaultLogger(),
 	}
 
 	app.applyOpts([]Option{
@@ -67,32 +67,24 @@ type Application struct {
 	logger       Logger
 	routeOptions []RouteOption
 
-	container     *inject.Container
-	inShutdown    int32
-	readyCh       chan struct{}
-	routes        []*route
-	srvShutdownCh chan struct{}
-	srv           *http.Server
-	wg            sync.WaitGroup
+	container *inject.Container
+	readyCh   chan struct{}
+	routes    []*route
+	srv       *http.Server
+	pprofSrv  *http.Server
+	wg        sync.WaitGroup
+
+	shutdownOnce   sync.Once
+	shutdownSignal chan struct{}
 }
 
 // Run starts an HTTP server.
 func (app *Application) Run() error {
-	if app.shuttingDown() {
-		return http.ErrServerClosed
-	}
-
-	defer app.wg.Wait()
-
+	app.startHTTPServer()
+	app.startPProfServer()
 	app.setupGracefulShutdown()
 
-	err := app.listenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		app.logger.Println("Error:", err)
-		app.shutdown()
-		return err
-	}
-
+	app.wg.Wait()
 	return nil
 }
 
@@ -128,27 +120,53 @@ func (app *Application) execute(fn func()) {
 	}()
 }
 
+func (app *Application) buildHTTPHandler() http.Handler {
+	router := httprouter.New()
+
+	for _, r := range app.routes {
+		router.Handle(r.method, r.path, r.buildHandle())
+	}
+
+	return router
+}
+
 // ListenAndServe listens on the TCP network address addr and then calls
 // Serve with handler to handle requests on incoming connections.
 // Accepted connections are configured to enable TCP keep-alives.
-func (app *Application) listenAndServe() error {
-	defer close(app.srvShutdownCh)
+func (app *Application) startHTTPServer() {
+	app.execute(func() {
+		app.srv = &http.Server{
+			Addr:    app.addr,
+			Handler: app.buildHTTPHandler(),
+		}
 
-	app.srv = &http.Server{
-		Handler:      app.buildHTTPHandler(),
-		Addr:         app.addr,
-		WriteTimeout: 5 * time.Second,
-		ReadTimeout:  5 * time.Second,
+		ln, err := net.Listen("tcp", app.addr)
+		if err != nil {
+			app.logger.Println("Error when listening on", app.addr)
+			return
+		}
+
+		close(app.readyCh)
+		app.logger.Println("Serving at addr", app.addr)
+		if err := app.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			app.logger.Println("Error when starting HTTP service", err)
+		}
+
+		app.shutdown()
+	})
+}
+
+func (app *Application) startPProfServer() {
+	if app.pprofSrv == nil {
+		return
 	}
 
-	ln, err := net.Listen("tcp", app.addr)
-	if err != nil {
-		return err
-	}
-
-	close(app.readyCh)
-	app.logger.Println("Serving at addr", app.addr)
-	return app.srv.Serve(ln)
+	app.execute(func() {
+		if err := app.pprofSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			app.logger.Println("Error while starting pprof service", err)
+		}
+		app.shutdown()
+	})
 }
 
 // setupGracefulShutdown starts a goroutine for interrupt signal and proceed with graceful shutdown.
@@ -158,24 +176,28 @@ func (app *Application) setupGracefulShutdown() {
 		signal.Notify(sigint, os.Interrupt)
 		select {
 		case <-sigint:
-			app.shutdown()
-		case <-app.srvShutdownCh:
+		case <-app.shutdownSignal:
+		}
+
+		app.execute(func() {
+			// We received an interrupt signal, shut down.
+			if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+				// Error from closing listeners, or context timeout:
+				app.logger.Println("HTTP server Shutdown: %v", err)
+			}
+		})
+
+		if app.pprofSrv != nil {
+			app.execute(func() {
+				_ = app.pprofSrv.Shutdown(context.Background())
+			})
 		}
 	})
 }
 
-func (app *Application) shuttingDown() bool {
-	return atomic.LoadInt32(&app.inShutdown) != 0
-}
-
 func (app *Application) shutdown() {
-	atomic.StoreInt32(&app.inShutdown, 1)
-	app.execute(func() {
-		// We received an interrupt signal, shut down.
-		if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
-			// Error from closing listeners, or context timeout:
-			app.logger.Println("HTTP server Shutdown: %v", err)
-		}
+	app.shutdownOnce.Do(func() {
+		close(app.shutdownSignal)
 	})
 }
 
@@ -185,14 +207,4 @@ func (app *Application) applyOpts(opts []Option) {
 			o.Apply(app)
 		}
 	}
-}
-
-func (app *Application) buildHTTPHandler() http.Handler {
-	router := httprouter.New()
-
-	for _, r := range app.routes {
-		router.Handle(r.method, r.path, r.buildHandle())
-	}
-
-	return router
 }

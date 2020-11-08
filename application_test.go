@@ -71,36 +71,26 @@ func Test_PATCH(t *testing.T) {
 }
 
 func Test_graceful_shutdown(t *testing.T) {
-	testDone := make(chan struct{})
+	runFinished := make(chan struct{})
 
-	require.NotPanics(t, func() {
-		defer close(testDone)
-		app := New()
-		runFinished := make(chan struct{})
+	app := New()
 
-		go func() {
-			require.NoError(t, app.Run())
-			close(runFinished)
-		}()
+	go func() {
+		require.NoError(t, app.Run())
+		close(runFinished)
+	}()
 
-		<-app.readyCh
+	select {
+	case <-app.readyCh:
 		app.shutdown()
-		<-runFinished
-
-		select {
-		case _, ok := <-app.srvShutdownCh:
-			require.False(t, ok, "srvShutdownCh should be closed")
-		default:
-			require.Fail(t, "srvShutdownCh should be closed")
-		}
-
-		require.EqualError(t, app.Run(), http.ErrServerClosed.Error())
-	})
+	case <-runFinished:
+		require.Fail(t, "App shouldn't stop running")
+	}
 
 	select {
 	case <-time.After(100 * time.Millisecond):
 		require.Fail(t, "Test times out")
-	case <-testDone:
+	case <-runFinished:
 	}
 }
 
@@ -116,6 +106,7 @@ func Test_Default(t *testing.T) {
 	app := Default()
 	require.Len(t, app.routeOptions, 8)
 	require.NotNil(t, app.logger)
+	require.NotNil(t, app.pprofSrv)
 }
 
 func Test_Application_Group(t *testing.T) {

@@ -13,16 +13,6 @@ func (opt OptionFn) Apply(app *Application) {
 	opt(app)
 }
 
-// WithLogger specifies a custom Logger for tha application.
-func WithLogger(l Logger) OptionFn {
-	return func(app *Application) {
-		if l != nil {
-			app.logger = l
-			app.MustRegister("logger", l)
-		}
-	}
-}
-
 // WithAddress specifies the TCP address for the server to listen on,
 func WithAddress(addr string) OptionFn {
 	return func(app *Application) {
