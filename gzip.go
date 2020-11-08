@@ -45,7 +45,7 @@ func gzipTransformer(cfg GzipConfig) handleTransformer {
 			logger := loggerFromCtx(req.Context())
 			w, err := gzip.NewWriterLevel(rw, cfg.Level)
 			if err != nil {
-				logger.Println("Fallback to default compress due to", err)
+				logger.Println("Fallback to default compression due to", err)
 				w = gzip.NewWriter(rw)
 			}
 
