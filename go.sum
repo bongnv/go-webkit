@@ -1,7 +1,7 @@
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
 github.com/DATA-DOG/go-sqlmock v1.5.0/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
-github.com/bongnv/inject v1.0.0-beta.2 h1:kh/ii1Q1HUPw2rku5EmdtFWboAezLovZR5yY0OETluY=
-github.com/bongnv/inject v1.0.0-beta.2/go.mod h1:iq0LCxltwwceChiuI6eVRG/gz3rvhWxm8127vuAR/9Q=
+github.com/bongnv/inject v1.0.0 h1:/4sHeEhlqEYZRYsMOGmHFYykZyYZv90v5gjiHoJcuJg=
+github.com/bongnv/inject v1.0.0/go.mod h1:iq0LCxltwwceChiuI6eVRG/gz3rvhWxm8127vuAR/9Q=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
