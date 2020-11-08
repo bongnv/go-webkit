@@ -10,7 +10,7 @@ import (
 
 func Test_WithPProf(t *testing.T) {
 	app := &Application{}
-	WithPProf(":8089")(app)
+	WithPProf(":8081")(app)
 	require.NotNil(t, app.pprofSrv)
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/debug/pprof/", nil)
