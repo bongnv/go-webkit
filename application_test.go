@@ -76,8 +76,10 @@ func Test_graceful_shutdown(t *testing.T) {
 	app := New()
 
 	go func() {
-		require.NoError(t, app.Run())
-		close(runFinished)
+		require.NotPanics(t, func() {
+			app.Run()
+			close(runFinished)
+		})
 	}()
 
 	select {

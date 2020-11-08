@@ -79,13 +79,12 @@ type Application struct {
 }
 
 // Run starts an HTTP server.
-func (app *Application) Run() error {
+func (app *Application) Run() {
 	app.startHTTPServer()
 	app.startPProfServer()
 	app.setupGracefulShutdown()
 
 	app.wg.Wait()
-	return nil
 }
 
 // Component finds and returns a component via name.
