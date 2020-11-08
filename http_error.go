@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ type HTTPError struct {
 }
 
 // WriteTo implements CustomHTTPResponse. It encodes the response as JSON format.
-func (err *HTTPError) WriteTo(w http.ResponseWriter) {
+func (err HTTPError) WriteTo(w http.ResponseWriter) {
 	w.Header().Add(HeaderContentType, jsonScheme)
 	w.WriteHeader(err.Code)
 	enc := json.NewEncoder(w)
@@ -20,6 +20,12 @@ func (err *HTTPError) WriteTo(w http.ResponseWriter) {
 }
 
 // Error implements error interface.
-func (err *HTTPError) Error() string {
+func (err HTTPError) Error() string {
 	return err.Message
 }
+
+// common HTTP errors that will be used.
+var (
+	timeoutErr = HTTPError{Code: http.StatusInternalServerError, Message: "Request Timeout"}
+	panicErr   = HTTPError{Code: http.StatusServiceUnavailable, Message: "Service Unavailable"}
+)

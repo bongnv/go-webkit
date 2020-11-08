@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 )
 
 func Test_WithErrorHandler(t *testing.T) {
-	opt := WithErrorHandler(defaultErrorHandler(nil))
+	opt := WithErrorHandler(defaultErrorHandler())
 	r := &route{}
 	opt(r)
 	require.NotNil(t, r.errorHandler)
@@ -22,7 +22,7 @@ func Test_defaultErrorHandler_CustomHTTPResponse(t *testing.T) {
 		Code:    http.StatusNotFound,
 		Message: "Resource not found",
 	}
-	defaultErrorHandler(defaultLogger())(rr, err)
+	require.NoError(t, defaultErrorHandler()(rr, err))
 	require.Equal(t, http.StatusNotFound, rr.Code)
 	require.Equal(t, "{\"message\":\"Resource not found\"}\n", rr.Body.String())
 }
@@ -30,7 +30,7 @@ func Test_defaultErrorHandler_CustomHTTPResponse(t *testing.T) {
 func Test_defaultErrorHandler_error(t *testing.T) {
 	rr := httptest.NewRecorder()
 	err := errors.New("resource not found")
-	defaultErrorHandler(defaultLogger())(rr, err)
+	require.NoError(t, defaultErrorHandler()(rr, err))
 	require.Equal(t, http.StatusInternalServerError, rr.Code)
 	require.Equal(t, "resource not found", rr.Body.String())
 }

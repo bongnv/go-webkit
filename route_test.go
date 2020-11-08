@@ -1,12 +1,10 @@
-package gwf
+package nanny
 
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -32,7 +30,7 @@ func Test_RouteOptionFn_Apply(t *testing.T) {
 
 func Test_buildHandle(t *testing.T) {
 	r := &route{
-		encoder: newEncoder(),
+		encoder: defaultEncoder{},
 		handler: func(_ context.Context, req Request) (interface{}, error) {
 			require.IsType(t, &requestImpl{}, req)
 			require.Len(t, req.(*requestImpl).params, 1)
@@ -55,7 +53,7 @@ func Test_buildHandle_responseError(t *testing.T) {
 		handler: func(_ context.Context, _ Request) (interface{}, error) {
 			return nil, errors.New("remote error")
 		},
-		errorHandler: defaultErrorHandler(log.New(os.Stderr, "", log.LstdFlags)),
+		errorHandler: defaultErrorHandler(),
 	}
 	rr := httptest.NewRecorder()
 	handle := r.buildHandle()
@@ -69,18 +67,4 @@ func Test_route_applyOpts(t *testing.T) {
 	r := &route{}
 	r.applyOpts([]RouteOption{mockMiddleware})
 	require.Len(t, r.middlewares, 1)
-}
-
-type mockCustomResp struct{}
-
-func (m mockCustomResp) WriteTo(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusAccepted)
-}
-
-func Test_writeToHTTPResponse(t *testing.T) {
-	r := &route{}
-	rr := httptest.NewRecorder()
-	err := r.writeToHTTPResponse(rr, mockCustomResp{})
-	require.NoError(t, err)
-	require.Equal(t, http.StatusAccepted, rr.Code)
 }

@@ -1,129 +1,111 @@
-package gwf
+package nanny
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/bongnv/inject"
 	"github.com/julienschmidt/httprouter"
 )
 
 // Handler defines a function to serve HTTP requests.
 type Handler func(ctx context.Context, req Request) (interface{}, error)
 
+// DefaultApp is a plugin to provide a set of common options for an application.
+var DefaultApp Plugin = []Option{
+	WithLogger(defaultLogger()),
+	WithRecovery(),
+	WithCORS(DefaultCORSConfig),
+	WithGzip(DefaultGzipConfig),
+	WithTimeout(1 * time.Second),
+	WithPProf(":8081"),
+}
+
 // New creates a new application.
 func New(opts ...Option) *Application {
-	logger := defaultLogger()
 	app := &Application{
-		router: httprouter.New(),
-		port:   8080,
-		routeOptions: []RouteOption{
-			WithDecoder(newDecoder()),
-			WithEncoder(newEncoder()),
-		},
-		readyCh:       make(chan struct{}),
-		srvShutdownCh: make(chan struct{}),
-		logger:        logger,
+		addr:           ":8080",
+		container:      inject.New(),
+		logger:         defaultLogger(),
+		readyCh:        make(chan struct{}),
+		shutdownSignal: make(chan struct{}),
 	}
 
+	app.applyOpts([]Option{
+		injectTimeoutMiddleware(),
+		contextInjector(),
+		WithDecoder(newDecoder()),
+		WithEncoder(defaultEncoder{}),
+	})
+
 	app.applyOpts(opts)
-	app.root = app.Group("/")
+
+	app.RouteGroup = &RouteGroup{
+		routeOptions: app.routeOptions,
+		app:          app,
+	}
+
 	return app
 }
 
 // Default returns an Application with a default set of configurations.
-func Default() *Application {
-	return New(
-		WithRecovery(),
-		WithCORS(DefaultCORSConfig),
-		WithGzip(DefaultGzipConfig),
-	)
+func Default(opts ...Option) *Application {
+	opts = append(DefaultApp, opts...)
+	return New(opts...)
 }
 
 // Application is a web application.
 type Application struct {
-	port         int
-	logger       Logger
-	routeOptions []RouteOption
+	*RouteGroup
 
-	inShutdown    int32
-	readyCh       chan struct{}
-	root          *Group
-	router        *httprouter.Router
-	srvShutdownCh chan struct{}
-	srv           *http.Server
-	wg            sync.WaitGroup
+	addr         string
+	container    *inject.Container
+	logger       Logger
+	pprofSrv     *http.Server
+	readyCh      chan struct{}
+	routeOptions []RouteOption
+	routes       []*route
+	srv          *http.Server
+	wg           sync.WaitGroup
+
+	shutdownOnce   sync.Once
+	shutdownSignal chan struct{}
 }
 
 // Run starts an HTTP server.
-func (app *Application) Run() error {
-	if app.shuttingDown() {
-		return http.ErrServerClosed
-	}
-
-	defer app.wg.Wait()
-
+func (app *Application) Run() {
+	app.startHTTPServer()
+	app.startPProfServer()
 	app.setupGracefulShutdown()
 
-	err := app.listenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		app.logger.Println("Error:", err)
-		app.shutdown()
-		return err
-	}
-
-	return nil
+	app.wg.Wait()
 }
 
-// GET registers a new GET route for a path with handler.
-func (app *Application) GET(path string, h Handler, opts ...RouteOption) {
-	app.root.GET(path, h, opts...)
+// Component finds and returns a component via name.
+// It returns an error if the requested component couldn't be found.
+func (app *Application) Component(name string) (interface{}, error) {
+	return app.container.Get(name)
 }
 
-// POST registers a new POST route for a path with handler.
-func (app *Application) POST(path string, h Handler, opts ...RouteOption) {
-	app.root.POST(path, h, opts...)
+// MustComponent finds and returns a component via name.
+// It panics if there is any error.
+func (app *Application) MustComponent(name string) interface{} {
+	return app.container.MustGet(name)
 }
 
-// PUT registers a new PUT route for a path with handler.
-func (app *Application) PUT(path string, h Handler, opts ...RouteOption) {
-	app.root.PUT(path, h, opts...)
+// Register registers a new component to the application.
+func (app *Application) Register(name string, component interface{}) error {
+	return app.container.Register(name, component)
 }
 
-// PATCH registers a new PATCH route for a path with handler.
-func (app *Application) PATCH(path string, h Handler, opts ...RouteOption) {
-	app.root.PATCH(path, h, opts...)
-
-}
-
-// DELETE registers a new DELETE route for a path with handler.
-func (app *Application) DELETE(path string, h Handler, opts ...RouteOption) {
-	app.root.DELETE(path, h, opts...)
-}
-
-// Group creates a group of sub-routes
-func (app *Application) Group(prefix string, opts ...RouteOption) *Group {
-	if len(prefix) == 0 || prefix[0] != '/' {
-		panic("path must begin with '/' in path '" + prefix + "'")
-	}
-
-	// Strip trailing / (if present) as all added sub paths must start with a /
-	if prefix[len(prefix)-1] == '/' {
-		prefix = prefix[:len(prefix)-1]
-	}
-
-	return &Group{
-		prefix:       prefix,
-		routeOptions: append(app.routeOptions, opts...),
-		router:       app.router,
-		logger:       app.logger,
-	}
+// MustRegister registers a new component to the application. It panics if there is any error.
+func (app *Application) MustRegister(name string, component interface{}) {
+	app.container.MustRegister(name, component)
 }
 
 // execute starts a function in a goroutine.
@@ -136,33 +118,53 @@ func (app *Application) execute(fn func()) {
 	}()
 }
 
+func (app *Application) buildHTTPHandler() http.Handler {
+	router := httprouter.New()
+
+	for _, r := range app.routes {
+		router.Handle(r.method, r.path, r.buildHandle())
+	}
+
+	return router
+}
+
 // ListenAndServe listens on the TCP network address addr and then calls
 // Serve with handler to handle requests on incoming connections.
 // Accepted connections are configured to enable TCP keep-alives.
-func (app *Application) listenAndServe() error {
-	defer close(app.srvShutdownCh)
+func (app *Application) startHTTPServer() {
+	app.execute(func() {
+		app.srv = &http.Server{
+			Addr:    app.addr,
+			Handler: app.buildHTTPHandler(),
+		}
 
-	app.srv = &http.Server{
-		Handler: app.router,
-		Addr:    fmt.Sprint(":", app.port),
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		ln, err := net.Listen("tcp", app.addr)
+		if err != nil {
+			app.logger.Println("Error when listening on", app.addr)
+			return
+		}
+
+		close(app.readyCh)
+		app.logger.Println("Serving at addr", app.addr)
+		if err := app.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			app.logger.Println("Error when starting HTTP service", err)
+		}
+
+		app.shutdown()
+	})
+}
+
+func (app *Application) startPProfServer() {
+	if app.pprofSrv == nil {
+		return
 	}
 
-	addr := fmt.Sprint(":", app.port)
-	if addr == "" {
-		addr = ":http"
-	}
-
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-
-	close(app.readyCh)
-	app.logger.Println("Serving at port", app.port)
-	return app.srv.Serve(ln)
+	app.execute(func() {
+		if err := app.pprofSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			app.logger.Println("Error while starting pprof service", err)
+		}
+		app.shutdown()
+	})
 }
 
 // setupGracefulShutdown starts a goroutine for interrupt signal and proceed with graceful shutdown.
@@ -172,24 +174,28 @@ func (app *Application) setupGracefulShutdown() {
 		signal.Notify(sigint, os.Interrupt)
 		select {
 		case <-sigint:
-			app.shutdown()
-		case <-app.srvShutdownCh:
+		case <-app.shutdownSignal:
+		}
+
+		app.execute(func() {
+			// We received an interrupt signal, shut down.
+			if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+				// Error from closing listeners, or context timeout:
+				app.logger.Println("HTTP server Shutdown: %v", err)
+			}
+		})
+
+		if app.pprofSrv != nil {
+			app.execute(func() {
+				_ = app.pprofSrv.Shutdown(context.Background())
+			})
 		}
 	})
 }
 
-func (app *Application) shuttingDown() bool {
-	return atomic.LoadInt32(&app.inShutdown) != 0
-}
-
 func (app *Application) shutdown() {
-	atomic.StoreInt32(&app.inShutdown, 1)
-	app.execute(func() {
-		// We received an interrupt signal, shut down.
-		if err := app.srv.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
-			// Error from closing listeners, or context timeout:
-			app.logger.Println("HTTP server Shutdown: %v", err)
-		}
+	app.shutdownOnce.Do(func() {
+		close(app.shutdownSignal)
 	})
 }
 

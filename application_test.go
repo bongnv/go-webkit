@@ -1,4 +1,4 @@
-package gwf
+package nanny
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 func executeRequest(app *Application, req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
-	app.router.ServeHTTP(rr, req)
+	app.buildHTTPHandler().ServeHTTP(rr, req)
 
 	return rr
 }
@@ -71,52 +71,44 @@ func Test_PATCH(t *testing.T) {
 }
 
 func Test_graceful_shutdown(t *testing.T) {
-	testDone := make(chan struct{})
+	runFinished := make(chan struct{})
 
-	require.NotPanics(t, func() {
-		defer close(testDone)
-		app := New()
-		runFinished := make(chan struct{})
+	app := New()
 
-		go func() {
-			require.NoError(t, app.Run())
+	go func() {
+		require.NotPanics(t, func() {
+			app.Run()
 			close(runFinished)
-		}()
-
-		<-app.readyCh
-		app.shutdown()
-		<-runFinished
-
-		select {
-		case _, ok := <-app.srvShutdownCh:
-			require.False(t, ok, "srvShutdownCh should be closed")
-		default:
-			require.Fail(t, "srvShutdownCh should be closed")
-		}
-
-		require.EqualError(t, app.Run(), http.ErrServerClosed.Error())
-	})
+		})
+	}()
 
 	select {
-	case <-time.After(100 * time.Millisecond):
+	case <-app.readyCh:
+		app.shutdown()
+	case <-runFinished:
+		require.Fail(t, "App shouldn't stop running")
+	}
+
+	select {
+	case <-time.After(1 * time.Second):
 		require.Fail(t, "Test times out")
-	case <-testDone:
+	case <-runFinished:
 	}
 }
 
 func Test_applyOpts(t *testing.T) {
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	opt := WithLogger(logger)
-	app := &Application{}
+	app := New()
 	app.applyOpts([]Option{opt})
 	require.Equal(t, logger, app.logger)
 }
 
 func Test_Default(t *testing.T) {
 	app := Default()
-	require.Len(t, app.routeOptions, 5)
-	require.NotNil(t, app.router)
+	require.Len(t, app.routeOptions, 8)
 	require.NotNil(t, app.logger)
+	require.NotNil(t, app.pprofSrv)
 }
 
 func Test_Application_Group(t *testing.T) {
@@ -133,4 +125,15 @@ func Test_Application_Group(t *testing.T) {
 		g := app.Group("/")
 		require.Empty(t, g.prefix)
 	})
+}
+
+func Test_Component(t *testing.T) {
+	app := New()
+	require.NoError(t, app.Register("logger", defaultLogger()))
+	l, err := app.Component("logger")
+	require.NoError(t, err)
+	require.NotNil(t, l)
+	_, ok := l.(Logger)
+	require.True(t, ok)
+	require.NotNil(t, app.MustComponent("logger"))
 }

@@ -1,8 +1,8 @@
-package gwf
+package nanny
 
 import (
-	"context"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -38,7 +38,10 @@ type route struct {
 	errorHandler ErrorHandler
 	handler      Handler
 	logger       Logger
+	method       string
 	middlewares  []Middleware
+	path         string
+	timeout      time.Duration
 	transformers []handleTransformer
 }
 
@@ -56,7 +59,6 @@ func (r *route) buildHandle() httprouter.Handle {
 
 	handle := func(w http.ResponseWriter, httpReq *http.Request, params httprouter.Params) {
 		ctx := httpReq.Context()
-		ctx = context.WithValue(ctx, ctxKeyHTTPResponseWriter, w)
 
 		req := &requestImpl{
 			decoder: r.decoder,
@@ -66,11 +68,13 @@ func (r *route) buildHandle() httprouter.Handle {
 
 		resp, err := h(ctx, req)
 		if err != nil {
-			r.errorHandler(w, err)
+			if errHandle := r.errorHandler(w, err); errHandle != nil {
+				r.logger.Println("Error", errHandle, "while handling error")
+			}
 			return
 		}
 
-		if errWrite := r.writeToHTTPResponse(w, resp); errWrite != nil {
+		if errWrite := r.encoder.Encode(w, resp); errWrite != nil {
 			r.logger.Println("Error", errWrite, "while sending response")
 		}
 	}
@@ -80,18 +84,4 @@ func (r *route) buildHandle() httprouter.Handle {
 	}
 
 	return handle
-}
-
-func (r *route) writeToHTTPResponse(w http.ResponseWriter, resp interface{}) error {
-	if resp == nil {
-		w.WriteHeader(http.StatusNoContent)
-		return nil
-	}
-
-	if customResp, ok := resp.(CustomHTTPResponse); ok {
-		customResp.WriteTo(w)
-		return nil
-	}
-
-	return r.encoder.Encode(w, resp)
 }
