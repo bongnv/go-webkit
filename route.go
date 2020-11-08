@@ -2,6 +2,7 @@ package nanny
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -40,6 +41,7 @@ type route struct {
 	method       string
 	middlewares  []Middleware
 	path         string
+	timeout      time.Duration
 	transformers []handleTransformer
 }
 
