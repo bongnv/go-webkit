@@ -53,6 +53,14 @@ An `Option` customizes an `Application` and these are available `Option`:
   app := nanny.New(nanny.WithLogger(logger))
 ```
 
+#### WithPProf
+
+`WithPProf` starts another HTTP service in a different port to serve endpoints for [`pprof`](https://golang.org/pkg/net/http/pprof/). The option is included in the default app with port 8081.
+
+```go
+  app := nanny.New(WithPProf(":8081"))
+```
+
 ### Route Options
 A `RouteOption` customizes a route. It can be used to add middlewares like `Recovery()`.
 

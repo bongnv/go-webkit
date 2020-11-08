@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"github.com/bongnv/nanny"
 )
@@ -23,5 +22,5 @@ func main() {
 		return "Hello " + reqDto.Name, nil
 	})
 
-	log.Println(app.Run())
+	app.Run()
 }
