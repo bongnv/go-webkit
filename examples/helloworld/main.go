@@ -20,7 +20,6 @@ func main() {
 			return nil, err
 		}
 
-		panic("I don't care")
 		return "Hello " + reqDto.Name, nil
 	})
 
