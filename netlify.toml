@@ -1,4 +1,4 @@
 [build]
   base = "docs/"
   command = "npx vuepress build"
-  publish = ".vuepress/dist"
+  publish = ".vuepress/dist/"
