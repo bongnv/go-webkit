@@ -45,7 +45,6 @@ func gzipTransformer(cfg GzipConfig) handleTransformer {
 			logger := loggerFromCtx(req.Context())
 			w, err := gzip.NewWriterLevel(rw, cfg.Level)
 			if err != nil {
-				// TODO: There should be log
 				logger.Println("Fallback to default compress due to", err)
 				w = gzip.NewWriter(rw)
 			}
@@ -56,7 +55,7 @@ func gzipTransformer(cfg GzipConfig) handleTransformer {
 			}
 
 			next(grw, req, params)
-			if err := grw.writer.Close(); err != nil {
+			if err := grw.Close(); err != nil {
 				logger.Println("Error while closing gzip writer", err)
 			}
 		}
@@ -89,6 +88,14 @@ func (gw *gzipResponseWriter) Write(b []byte) (int, error) {
 	}
 
 	return gw.writer.Write(b)
+}
+
+func (gw *gzipResponseWriter) Close() error {
+	if gw.statusCode == 0 {
+		gw.WriteHeader(http.StatusOK)
+	}
+
+	return gw.writer.Close()
 }
 
 func (gw gzipResponseWriter) isBodyAllowed() bool {

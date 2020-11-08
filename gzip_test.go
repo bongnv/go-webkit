@@ -70,9 +70,7 @@ func Test_WithGzip_fallback(t *testing.T) {
 }
 
 func Test_WithGzip_write_default_status(t *testing.T) {
-	h := func(rw http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-		_, _ = rw.Write([]byte("OK"))
-	}
+	h := func(rw http.ResponseWriter, _ *http.Request, _ httprouter.Params) {}
 	h = gzipTransformer(DefaultGzipConfig)(h)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -80,7 +78,7 @@ func Test_WithGzip_write_default_status(t *testing.T) {
 	rr := httptest.NewRecorder()
 	h(rr, req, nil)
 	require.Equal(t, http.StatusOK, rr.Code)
-	require.Equal(t, "OK", decodeGzip(rr.Body))
+	require.Equal(t, "", decodeGzip(rr.Body))
 	require.Equal(t, "gzip", rr.Header().Get(HeaderContentEncoding))
 }
 
